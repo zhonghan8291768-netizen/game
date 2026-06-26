@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<!-- saved from url=(0067)file:///C:/Users/lavin/Documents/New%20project/prototype/index.html -->
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fruit Box - 合十苹果</title>
+  <style>
+    :root {
+      --rows: 9;
+      --cols: 14;
+      --bg: #fffdf6;
+      --ink: #241b14;
+      --muted: #6f6256;
+      --paper: #fffaf0;
+      --green: #15c66e;
+      --green-dark: #0a9e52;
+      --green-soft: #dff7d8;
+      --red: #f0443e;
+      --red-dark: #b92b29;
+      --yellow: #ffd25a;
+      --line: rgba(54, 35, 20, .16);
+      --select: rgba(255, 210, 90, .28);
+      --select-good: rgba(39, 174, 96, .22);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    }
+
+    button {
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 18px;
+      color: var(--ink);
+      background: var(--yellow);
+      font: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    button.secondary {
+      background: #fffaf3;
+      border: 1px solid rgba(74, 45, 20, .2);
+    }
+
+    button:active { transform: translateY(1px); }
+
+    .page {
+      width: min(1080px, 100%);
+      margin: 0 auto;
+      padding: clamp(10px, 2vw, 22px);
+    }
+
+    .game {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      border: 10px solid var(--green);
+      border-radius: 28px;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px),
+        linear-gradient(135deg, #edfbe7 0%, #f8fff2 100%);
+      background-size: 18px 18px, 18px 18px, auto;
+      box-shadow:
+        inset 0 0 0 4px rgba(0, 124, 62, .18),
+        0 18px 46px rgba(23, 94, 41, .18);
+    }
+
+    .game-head {
+      padding: 12px 18px 4px;
+    }
+
+    .brand {
+      min-width: 0;
+      line-height: 1;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: clamp(34px, 7vw, 64px);
+      letter-spacing: 0;
+      text-shadow: 0 3px 0 rgba(0, 0, 0, .08);
+    }
+
+    .brand .fruit { color: #ff7b2c; }
+    .brand .box { color: #22bf4c; }
+
+    .playfield {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 44px;
+      gap: 10px;
+      align-items: stretch;
+      padding: 8px 18px 12px;
+    }
+
+    .board-wrap {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      user-select: none;
+    }
+
+    .board {
+      position: relative;
+      width: 100%;
+      aspect-ratio: var(--cols) / var(--rows);
+      display: grid;
+      grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+      grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+      gap: clamp(2px, .45vw, 5px);
+      padding: clamp(5px, .9vw, 10px);
+      border: 2px solid rgba(255, 255, 255, .72);
+      background:
+        linear-gradient(90deg, rgba(119, 207, 102, .22) 1px, transparent 1px),
+        linear-gradient(rgba(119, 207, 102, .22) 1px, transparent 1px),
+        rgba(255, 255, 255, .54);
+      background-size: 12px 12px;
+      touch-action: none;
+    }
+
+    .cell {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      min-height: 0;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: crosshair;
+    }
+
+    .apple {
+      position: relative;
+      width: 88%;
+      aspect-ratio: 1 / .94;
+      display: grid;
+      place-items: center;
+      color: #fff8ef;
+      font-size: clamp(13px, 2.25vw, 24px);
+      font-weight: 900;
+      text-shadow: 0 2px 0 rgba(86, 16, 16, .26);
+      background:
+        radial-gradient(circle at 34% 24%, rgba(255,255,255,.55), transparent 17%),
+        linear-gradient(145deg, #ff7169 0%, var(--red) 58%, var(--red-dark) 100%);
+      border-radius: 47% 48% 53% 50% / 43% 43% 58% 58%;
+      box-shadow: inset 0 -6px 0 rgba(85, 12, 12, .12), 0 3px 6px rgba(82, 51, 28, .18);
+      transition: transform .12s ease, opacity .18s ease, filter .12s ease;
+    }
+
+    .apple::before {
+      content: "";
+      position: absolute;
+      top: -13%;
+      left: 49%;
+      width: 9%;
+      height: 21%;
+      border-radius: 999px;
+      background: #6c411f;
+      transform: rotate(15deg);
+    }
+
+    .apple::after {
+      content: "";
+      position: absolute;
+      top: -12%;
+      left: 57%;
+      width: 24%;
+      height: 15%;
+      border-radius: 70% 12% 70% 12%;
+      background: linear-gradient(135deg, #72d882, #2faa53);
+      transform: rotate(-18deg);
+    }
+
+    .cell.empty .apple {
+      opacity: 0;
+      transform: scale(.2) rotate(18deg);
+      pointer-events: none;
+    }
+
+    .cell.selected .apple {
+      filter: saturate(1.1) brightness(1.08);
+      transform: translateY(-2px) scale(1.05);
+    }
+
+    .cell.hint .apple {
+      animation: pulse .8s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { filter: brightness(1); transform: scale(1); }
+      to { filter: brightness(1.18); transform: scale(1.1); }
+    }
+
+    .cell.good .apple { animation: pop .22s ease both; }
+    @keyframes pop { to { transform: scale(0) rotate(24deg); opacity: 0; } }
+
+    .selection {
+      position: absolute;
+      z-index: 3;
+      display: none;
+      border: 3px solid var(--yellow);
+      background: var(--select);
+      pointer-events: none;
+      box-shadow: 0 0 0 2px rgba(255,255,255,.7);
+    }
+
+    .selection.ready {
+      border-color: #1cb765;
+      background: var(--select-good);
+    }
+
+    .sum-badge {
+      display: none;
+    }
+
+    .float-score {
+      position: absolute;
+      z-index: 5;
+      color: #0d8d4a;
+      font-size: 25px;
+      font-weight: 900;
+      pointer-events: none;
+      animation: rise .65s ease-out both;
+    }
+
+    @keyframes rise {
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(-34px); opacity: 0; }
+    }
+
+    .timer {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      justify-items: center;
+      gap: 6px;
+      min-width: 38px;
+      color: #0b9e53;
+      font-weight: 900;
+    }
+
+    .score-pill {
+      min-width: 42px;
+      padding: 5px 4px;
+      border: 1px solid rgba(11, 158, 83, .28);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .68);
+      text-align: center;
+    }
+
+    .score-pill b {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .score-pill span {
+      display: block;
+      margin-top: 3px;
+      color: var(--ink);
+      font-size: 23px;
+      line-height: 1;
+    }
+
+    .timer-value {
+      min-height: 22px;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .time-track {
+      position: relative;
+      width: 14px;
+      min-height: 100%;
+      border: 2px solid rgba(11, 158, 83, .32);
+      background: rgba(255, 255, 255, .58);
+      overflow: hidden;
+    }
+
+    .time-fill {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 100%;
+      background: linear-gradient(180deg, #72e991, #08b75e);
+      transition: height .25s linear, background .2s ease;
+    }
+
+    .time-fill.low {
+      background: linear-gradient(180deg, #ff9a65, #f0443e);
+    }
+
+    .game-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 18px 12px;
+      background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0, 123, 58, .12));
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .small-note {
+      color: rgba(255,255,255,.92);
+      font-size: 13px;
+      font-weight: 700;
+      text-shadow: 0 1px 1px rgba(0,0,0,.18);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px),
+        rgba(229, 252, 215, .92);
+      background-size: 22px 22px;
+    }
+
+    .overlay.hidden { display: none; }
+
+    .start-card {
+      width: min(760px, 100%);
+      min-height: 360px;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(230px, 1fr);
+      gap: 24px;
+      align-items: center;
+      padding: clamp(18px, 4vw, 40px);
+    }
+
+    .start-title small {
+      display: block;
+      color: #f5792e;
+      font-size: clamp(18px, 3vw, 28px);
+      font-weight: 900;
+    }
+
+    .start-title h1 {
+      margin: 2px 0 12px;
+      font-size: clamp(48px, 10vw, 88px);
+      line-height: .9;
+      letter-spacing: 0;
+    }
+
+    .start-title .fruit { color: #ff7b2c; }
+    .start-title .box { color: #22bf4c; }
+
+    .start-title p {
+      margin: 0;
+      max-width: 420px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .start-side {
+      display: grid;
+      place-items: center;
+      gap: 16px;
+    }
+
+    .play-apple {
+      width: clamp(150px, 25vw, 230px);
+      aspect-ratio: 1 / .92;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: clamp(28px, 6vw, 54px);
+      font-weight: 900;
+      text-shadow: 0 2px 0 rgba(86, 16, 16, .22);
+      border: 0;
+      border-radius: 47% 48% 53% 50% / 43% 43% 58% 58%;
+      background:
+        radial-gradient(circle at 34% 24%, rgba(255,255,255,.48), transparent 17%),
+        linear-gradient(145deg, #ff746b, #f0443e 60%, #b92b29);
+      box-shadow: inset 0 -12px 0 rgba(85, 12, 12, .14), 0 14px 28px rgba(116, 32, 22, .2);
+    }
+
+    .preview-apples {
+      width: min(260px, 100%);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .preview-apples span {
+      aspect-ratio: 1 / .92;
+      display: grid;
+      place-items: center;
+      color: #fff7ef;
+      font-size: 24px;
+      font-weight: 900;
+      border-radius: 47% 48% 53% 50% / 43% 43% 58% 58%;
+      background: linear-gradient(145deg, #ff746b, #f0443e 60%, #b92b29);
+    }
+
+    .modal {
+      width: min(440px, 100%);
+      padding: 22px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 22px 52px rgba(46, 34, 18, .24);
+    }
+
+    .modal h2 { margin: 0 0 8px; font-size: 28px; }
+    .modal p { margin: 0; color: var(--muted); line-height: 1.7; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+
+    .helpbar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .tip {
+      min-height: 76px;
+      padding: 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--paper);
+    }
+
+    .tip strong { display: block; margin-bottom: 5px; font-size: 15px; }
+    .tip span { color: var(--muted); line-height: 1.45; font-size: 13px; }
+
+    @media (max-width: 720px) {
+      html, body { overscroll-behavior: none; }
+      .page {
+        padding: max(6px, env(safe-area-inset-top)) 6px 6px;
+      }
+      .game {
+        border-width: 5px;
+        border-radius: 18px;
+      }
+      .game-head {
+        display: flex;
+        justify-content: center;
+        padding: 6px 8px 0;
+      }
+      .brand strong {
+        font-size: clamp(26px, 8.4vw, 40px);
+      }
+      .playfield {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 7px;
+        padding: 6px 8px 8px;
+      }
+      .board {
+        width: 100%;
+        gap: clamp(2px, .65vw, 4px);
+        padding: clamp(4px, 1.1vw, 7px);
+        border-width: 1px;
+        max-height: calc(100svh - 182px);
+      }
+      .apple {
+        width: 92%;
+        font-size: clamp(14px, 4.2vw, 22px);
+        box-shadow: inset 0 -4px 0 rgba(85, 12, 12, .12), 0 2px 4px rgba(82, 51, 28, .16);
+      }
+      .apple::before { top: -12%; height: 19%; }
+      .apple::after { top: -11%; width: 22%; }
+      .selection { border-width: 2px; }
+      .timer {
+        width: 100%;
+        min-width: 0;
+        display: grid;
+        grid-template-columns: auto auto minmax(0, 1fr);
+        grid-template-rows: auto;
+        align-items: center;
+        gap: 8px;
+      }
+      .score-pill {
+        min-width: 62px;
+        padding: 4px 8px;
+      }
+      .score-pill b,
+      .score-pill span {
+        display: inline;
+        margin: 0;
+        font-size: 14px;
+      }
+      .score-pill span { margin-left: 4px; }
+      .timer-value {
+        min-height: auto;
+        font-size: 15px;
+        white-space: nowrap;
+      }
+      .time-track {
+        width: 100%;
+        height: 12px;
+        min-height: 12px;
+        border-radius: 999px;
+      }
+      .time-fill {
+        top: 0;
+        bottom: 0;
+        right: auto;
+        height: 100% !important;
+        width: 100%;
+      }
+      .timer > div:last-child { display: none; }
+      .game-foot {
+        align-items: stretch;
+        flex-direction: column;
+        padding: 7px 8px 9px;
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+      }
+      button {
+        min-height: 40px;
+        padding: 0 8px;
+        border-radius: 10px;
+      }
+      .small-note { display: none; }
+      .start-card {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        min-height: 0;
+        text-align: center;
+      }
+      .start-title p { margin: 0 auto; }
+      .preview-apples { display: none; }
+      .helpbar {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .tip { min-height: auto; padding: 10px 12px; }
+    }
+
+    @media (max-width: 390px) {
+      .brand strong { font-size: clamp(24px, 8vw, 34px); }
+      .board { max-height: calc(100svh - 174px); }
+      .apple { font-size: clamp(13px, 3.9vw, 18px); }
+      .tip { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="game" aria-label="Fruit Box 游戏区域">
+      <div class="game-head">
+        <div class="brand">
+          <strong><span class="fruit">Fruit</span> <span class="box">Box</span></strong>
+        </div>
+      </div>
+
+      <div class="playfield">
+        <div class="board-wrap">
+          <div id="board" class="board">
+            <div id="selection" class="selection" style="display: none; left: 270.135px; top: 468.568px; width: 121.177px; height: 55.0323px;"></div>
+            <div id="sumBadge" class="sum-badge" style="display: none;">0</div>
+          <button class="cell" data-id="0" style="grid-area: 1 / 1;"><span class="apple">2</span></button><button class="cell" data-id="1" style="grid-area: 1 / 2;"><span class="apple">4</span></button><button class="cell" data-id="2" style="grid-area: 1 / 3;"><span class="apple">5</span></button><button class="cell" data-id="3" style="grid-area: 1 / 4;"><span class="apple">2</span></button><button class="cell" data-id="4" style="grid-area: 1 / 5;"><span class="apple">5</span></button><button class="cell" data-id="5" style="grid-area: 1 / 6;"><span class="apple">2</span></button><button class="cell" data-id="6" style="grid-area: 1 / 7;"><span class="apple">8</span></button><button class="cell" data-id="7" style="grid-area: 1 / 8;"><span class="apple">6</span></button><button class="cell" data-id="8" style="grid-area: 1 / 9;"><span class="apple">4</span></button><button class="cell" data-id="9" style="grid-area: 1 / 10;"><span class="apple">6</span></button><button class="cell" data-id="10" style="grid-area: 1 / 11;"><span class="apple">3</span></button><button class="cell" data-id="11" style="grid-area: 1 / 12;"><span class="apple">1</span></button><button class="cell" data-id="12" style="grid-area: 1 / 13;"><span class="apple">6</span></button><button class="cell" data-id="13" style="grid-area: 1 / 14;"><span class="apple">4</span></button><button class="cell" data-id="14" style="grid-area: 2 / 1;"><span class="apple">5</span></button><button class="cell" data-id="15" style="grid-area: 2 / 2;"><span class="apple">6</span></button><button class="cell" data-id="16" style="grid-area: 2 / 3;"><span class="apple">5</span></button><button class="cell" data-id="17" style="grid-area: 2 / 4;"><span class="apple">7</span></button><button class="cell" data-id="18" style="grid-area: 2 / 5;"><span class="apple">3</span></button><button class="cell" data-id="19" style="grid-area: 2 / 6;"><span class="apple">7</span></button><button class="cell" data-id="20" style="grid-area: 2 / 7;"><span class="apple">3</span></button><button class="cell" data-id="21" style="grid-area: 2 / 8;"><span class="apple">3</span></button><button class="cell" data-id="22" style="grid-area: 2 / 9;"><span class="apple">6</span></button><button class="cell" data-id="23" style="grid-area: 2 / 10;"><span class="apple">5</span></button><button class="cell" data-id="24" style="grid-area: 2 / 11;"><span class="apple">4</span></button><button class="cell" data-id="25" style="grid-area: 2 / 12;"><span class="apple">9</span></button><button class="cell" data-id="26" style="grid-area: 2 / 13;"><span class="apple">3</span></button><button class="cell" data-id="27" style="grid-area: 2 / 14;"><span class="apple">7</span></button><button class="cell" data-id="28" style="grid-area: 3 / 1;"><span class="apple">5</span></button><button class="cell" data-id="29" style="grid-area: 3 / 2;"><span class="apple">5</span></button><button class="cell" data-id="30" style="grid-area: 3 / 3;"><span class="apple">4</span></button><button class="cell" data-id="31" style="grid-area: 3 / 4;"><span class="apple">1</span></button><button class="cell" data-id="32" style="grid-area: 3 / 5;"><span class="apple">6</span></button><button class="cell" data-id="33" style="grid-area: 3 / 6;"><span class="apple">3</span></button><button class="cell" data-id="34" style="grid-area: 3 / 7;"><span class="apple">1</span></button><button class="cell" data-id="35" style="grid-area: 3 / 8;"><span class="apple">1</span></button><button class="cell" data-id="36" style="grid-area: 3 / 9;"><span class="apple">9</span></button><button class="cell" data-id="37" style="grid-area: 3 / 10;"><span class="apple">5</span></button><button class="cell" data-id="38" style="grid-area: 3 / 11;"><span class="apple">6</span></button><button class="cell" data-id="39" style="grid-area: 3 / 12;"><span class="apple">1</span></button><button class="cell" data-id="40" style="grid-area: 3 / 13;"><span class="apple">2</span></button><button class="cell" data-id="41" style="grid-area: 3 / 14;"><span class="apple">4</span></button><button class="cell" data-id="42" style="grid-area: 4 / 1;"><span class="apple">3</span></button><button class="cell" data-id="43" style="grid-area: 4 / 2;"><span class="apple">1</span></button><button class="cell" data-id="44" style="grid-area: 4 / 3;"><span class="apple">4</span></button><button class="cell" data-id="45" style="grid-area: 4 / 4;"><span class="apple">6</span></button><button class="cell" data-id="46" style="grid-area: 4 / 5;"><span class="apple">5</span></button><button class="cell" data-id="47" style="grid-area: 4 / 6;"><span class="apple">5</span></button><button class="cell" data-id="48" style="grid-area: 4 / 7;"><span class="apple">8</span></button><button class="cell" data-id="49" style="grid-area: 4 / 8;"><span class="apple">3</span></button><button class="cell" data-id="50" style="grid-area: 4 / 9;"><span class="apple">1</span></button><button class="cell" data-id="51" style="grid-area: 4 / 10;"><span class="apple">4</span></button><button class="cell" data-id="52" style="grid-area: 4 / 11;"><span class="apple">1</span></button><button class="cell" data-id="53" style="grid-area: 4 / 12;"><span class="apple">4</span></button><button class="cell" data-id="54" style="grid-area: 4 / 13;"><span class="apple">5</span></button><button class="cell" data-id="55" style="grid-area: 4 / 14;"><span class="apple">5</span></button><button class="cell" data-id="56" style="grid-area: 5 / 1;"><span class="apple">7</span></button><button class="cell" data-id="57" style="grid-area: 5 / 2;"><span class="apple">3</span></button><button class="cell" data-id="58" style="grid-area: 5 / 3;"><span class="apple">6</span></button><button class="cell" data-id="59" style="grid-area: 5 / 4;"><span class="apple">7</span></button><button class="cell" data-id="60" style="grid-area: 5 / 5;"><span class="apple">3</span></button><button class="cell" data-id="61" style="grid-area: 5 / 6;"><span class="apple">7</span></button><button class="cell" data-id="62" style="grid-area: 5 / 7;"><span class="apple">3</span></button><button class="cell" data-id="63" style="grid-area: 5 / 8;"><span class="apple">7</span></button><button class="cell" data-id="64" style="grid-area: 5 / 9;"><span class="apple">4</span></button><button class="cell" data-id="65" style="grid-area: 5 / 10;"><span class="apple">4</span></button><button class="cell" data-id="66" style="grid-area: 5 / 11;"><span class="apple">4</span></button><button class="cell" data-id="67" style="grid-area: 5 / 12;"><span class="apple">6</span></button><button class="cell" data-id="68" style="grid-area: 5 / 13;"><span class="apple">7</span></button><button class="cell" data-id="69" style="grid-area: 5 / 14;"><span class="apple">8</span></button><button class="cell" data-id="70" style="grid-area: 6 / 1;"><span class="apple">5</span></button><button class="cell" data-id="71" style="grid-area: 6 / 2;"><span class="apple">5</span></button><button class="cell" data-id="72" style="grid-area: 6 / 3;"><span class="apple">2</span></button><button class="cell" data-id="73" style="grid-area: 6 / 4;"><span class="apple">2</span></button><button class="cell" data-id="74" style="grid-area: 6 / 5;"><span class="apple">2</span></button><button class="cell" data-id="75" style="grid-area: 6 / 6;"><span class="apple">4</span></button><button class="cell" data-id="76" style="grid-area: 6 / 7;"><span class="apple">2</span></button><button class="cell" data-id="77" style="grid-area: 6 / 8;"><span class="apple">3</span></button><button class="cell" data-id="78" style="grid-area: 6 / 9;"><span class="apple">7</span></button><button class="cell" data-id="79" style="grid-area: 6 / 10;"><span class="apple">2</span></button><button class="cell" data-id="80" style="grid-area: 6 / 11;"><span class="apple">2</span></button><button class="cell" data-id="81" style="grid-area: 6 / 12;"><span class="apple">5</span></button><button class="cell" data-id="82" style="grid-area: 6 / 13;"><span class="apple">4</span></button><button class="cell" data-id="83" style="grid-area: 6 / 14;"><span class="apple">1</span></button><button class="cell" data-id="84" style="grid-area: 7 / 1;"><span class="apple">4</span></button><button class="cell" data-id="85" style="grid-area: 7 / 2;"><span class="apple">8</span></button><button class="cell" data-id="86" style="grid-area: 7 / 3;"><span class="apple">4</span></button><button class="cell" data-id="87" style="grid-area: 7 / 4;"><span class="apple">2</span></button><button class="cell" data-id="88" style="grid-area: 7 / 5;"><span class="apple">2</span></button><button class="cell" data-id="89" style="grid-area: 7 / 6;"><span class="apple">2</span></button><button class="cell" data-id="90" style="grid-area: 7 / 7;"><span class="apple">4</span></button><button class="cell" data-id="91" style="grid-area: 7 / 8;"><span class="apple">3</span></button><button class="cell" data-id="92" style="grid-area: 7 / 9;"><span class="apple">7</span></button><button class="cell" data-id="93" style="grid-area: 7 / 10;"><span class="apple">3</span></button><button class="cell" data-id="94" style="grid-area: 7 / 11;"><span class="apple">7</span></button><button class="cell" data-id="95" style="grid-area: 7 / 12;"><span class="apple">2</span></button><button class="cell" data-id="96" style="grid-area: 7 / 13;"><span class="apple">9</span></button><button class="cell" data-id="97" style="grid-area: 7 / 14;"><span class="apple">1</span></button><button class="cell" data-id="98" style="grid-area: 8 / 1;"><span class="apple">4</span></button><button class="cell" data-id="99" style="grid-area: 8 / 2;"><span class="apple">2</span></button><button class="cell" data-id="100" style="grid-area: 8 / 3;"><span class="apple">2</span></button><button class="cell" data-id="101" style="grid-area: 8 / 4;"><span class="apple">2</span></button><button class="cell empty" data-id="102" style="grid-area: 8 / 5;"><span class="apple">2</span></button><button class="cell empty" data-id="103" style="grid-area: 8 / 6;"><span class="apple">8</span></button><button class="cell" data-id="104" style="grid-area: 8 / 7;"><span class="apple">4</span></button><button class="cell" data-id="105" style="grid-area: 8 / 8;"><span class="apple">5</span></button><button class="cell" data-id="106" style="grid-area: 8 / 9;"><span class="apple">5</span></button><button class="cell" data-id="107" style="grid-area: 8 / 10;"><span class="apple">6</span></button><button class="cell" data-id="108" style="grid-area: 8 / 11;"><span class="apple">3</span></button><button class="cell" data-id="109" style="grid-area: 8 / 12;"><span class="apple">1</span></button><button class="cell" data-id="110" style="grid-area: 8 / 13;"><span class="apple">7</span></button><button class="cell" data-id="111" style="grid-area: 8 / 14;"><span class="apple">3</span></button><button class="cell" data-id="112" style="grid-area: 9 / 1;"><span class="apple">2</span></button><button class="cell" data-id="113" style="grid-area: 9 / 2;"><span class="apple">3</span></button><button class="cell" data-id="114" style="grid-area: 9 / 3;"><span class="apple">5</span></button><button class="cell" data-id="115" style="grid-area: 9 / 4;"><span class="apple">6</span></button><button class="cell" data-id="116" style="grid-area: 9 / 5;"><span class="apple">3</span></button><button class="cell" data-id="117" style="grid-area: 9 / 6;"><span class="apple">1</span></button><button class="cell" data-id="118" style="grid-area: 9 / 7;"><span class="apple">9</span></button><button class="cell" data-id="119" style="grid-area: 9 / 8;"><span class="apple">6</span></button><button class="cell" data-id="120" style="grid-area: 9 / 9;"><span class="apple">6</span></button><button class="cell" data-id="121" style="grid-area: 9 / 10;"><span class="apple">3</span></button><button class="cell" data-id="122" style="grid-area: 9 / 11;"><span class="apple">1</span></button><button class="cell" data-id="123" style="grid-area: 9 / 12;"><span class="apple">4</span></button><button class="cell" data-id="124" style="grid-area: 9 / 13;"><span class="apple">4</span></button><button class="cell" data-id="125" style="grid-area: 9 / 14;"><span class="apple">2</span></button></div>
+        </div>
+        <aside class="timer" aria-label="倒计时">
+          <div class="score-pill"><b>得分</b><span id="scoreText">2</span></div>
+          <div id="timeText" class="timer-value">01:03</div>
+          <div class="time-track"><div id="timeFill" class="time-fill" style="height: 52.5%;"></div></div>
+          <div>时间</div>
+        </aside>
+      </div>
+
+      <div class="game-foot">
+        <div class="controls">
+          <button id="newBtn">新游戏</button>
+          <button id="hintBtn" class="secondary">提示</button>
+          <button id="shuffleBtn" class="secondary">重排</button>
+        </div>
+        <div class="small-note">拖拽框选苹果，数字合计为 10 即可消除。</div>
+      </div>
+
+      <div id="startOverlay" class="overlay">
+        <div class="start-card">
+          <div class="start-title">
+            <h1><span class="fruit">Fruit</span><br><span class="box">Box</span></h1>
+            <p>拖拽圈住一些苹果，只要框内数字合计为 10，就能消除并得分。</p>
+          </div>
+          <div class="start-side">
+            <button id="startBtn" class="play-apple">开始</button>
+            <div class="preview-apples" aria-hidden="true">
+              <span>5</span><span>7</span><span>6</span><span>8</span>
+              <span>3</span><span>2</span><span>9</span><span>1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="endOverlay" class="overlay hidden">
+        <div class="modal">
+          <h2 id="endTitle">时间到</h2>
+          <p id="endText"></p>
+          <div class="actions">
+            <button id="againBtn">再来一局</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="helpbar" aria-label="玩法提示">
+      <div class="tip"><strong>规则</strong><span>拖拽形成矩形选择框，框内数字合计 10 即可消除。</span></div>
+      <div class="tip"><strong>得分</strong><span>消除几个苹果就得几分，越快找到大组合越划算。</span></div>
+      <div class="tip"><strong>适配</strong><span>电脑可用鼠标拖拽，手机和平板可直接触屏框选。</span></div>
+    </section>
+  </main>
+
+  <script>
+    let rows = 9;
+    let cols = 14;
+    let totalCells = rows * cols;
+    const gameTime = 120;
+    const mobileBoard = { rows: 10, cols: 12 }; // 120 个苹果，手机更好点按但数量仍然接近桌面版
+    const desktopBoard = { rows: 9, cols: 14 }; // 126 个苹果，桌面保持原来的密度
+    const board = document.getElementById('board');
+    const selection = document.getElementById('selection');
+    const sumBadge = document.getElementById('sumBadge');
+    const scoreText = document.getElementById('scoreText');
+    const timeText = document.getElementById('timeText');
+    const timeFill = document.getElementById('timeFill');
+    const startOverlay = document.getElementById('startOverlay');
+    const endOverlay = document.getElementById('endOverlay');
+    const endTitle = document.getElementById('endTitle');
+    const endText = document.getElementById('endText');
+
+    let cells = [];
+    let score = 0;
+    let left = totalCells;
+    let timeLeft = gameTime;
+    let timerId = null;
+    let running = false;
+    let dragging = false;
+    let dragStart = null;
+    let dragEnd = null;
+    let currentSelection = [];
+    let hintCells = [];
+
+    const patterns = [
+      [1, 9], [2, 8], [3, 7], [4, 6], [5, 5],
+      [1, 2, 7], [1, 3, 6], [1, 4, 5], [2, 3, 5], [2, 4, 4],
+      [1, 1, 3, 5], [1, 2, 3, 4], [2, 2, 2, 4], [1, 1, 4, 4]
+    ];
+
+    function getBoardConfig() {
+      return window.matchMedia('(max-width: 720px)').matches ? mobileBoard : desktopBoard;
+    }
+
+    function applyBoardConfig() {
+      const config = getBoardConfig();
+      rows = config.rows;
+      cols = config.cols;
+      totalCells = rows * cols;
+      document.documentElement.style.setProperty('--rows', rows);
+      document.documentElement.style.setProperty('--cols', cols);
+    }
+
+    function generateNumbers() {
+      const numbers = Array(totalCells).fill(0);
+      const occupied = Array(totalCells).fill(false);
+
+      function indexOf(row, col) {
+        return row * cols + col;
+      }
+
+      function canPlace(row, col, pattern, horizontal) {
+        if (horizontal && col + pattern.length > cols) return false;
+        if (!horizontal && row + pattern.length > rows) return false;
+        return pattern.every((_, offset) => {
+          const r = row + (horizontal ? 0 : offset);
+          const c = col + (horizontal ? offset : 0);
+          return !occupied[indexOf(r, c)];
+        });
+      }
+
+      function place(row, col, pattern, horizontal) {
+        pattern.forEach((value, offset) => {
+          const r = row + (horizontal ? 0 : offset);
+          const c = col + (horizontal ? offset : 0);
+          const idx = indexOf(r, c);
+          numbers[idx] = value;
+          occupied[idx] = true;
+        });
+      }
+
+      for (let attempt = 0; attempt < 260; attempt++) {
+        const pattern = [...patterns[Math.floor(Math.random() * patterns.length)]];
+        if (Math.random() < 0.5) pattern.reverse();
+        const horizontal = Math.random() < 0.72;
+        const row = Math.floor(Math.random() * rows);
+        const col = Math.floor(Math.random() * cols);
+        if (canPlace(row, col, pattern, horizontal)) place(row, col, pattern, horizontal);
+      }
+
+      for (let i = 0; i < numbers.length; i++) {
+        if (!numbers[i]) numbers[i] = 1 + Math.floor(Math.random() * 9);
+      }
+
+      return numbers;
+    }
+
+    function newGame() {
+      applyBoardConfig();
+      const numbers = generateNumbers();
+      cells = numbers.map((value, index) => ({
+        id: index,
+        row: Math.floor(index / cols),
+        col: index % cols,
+        value,
+        active: true
+      }));
+      score = 0;
+      left = totalCells;
+      timeLeft = gameTime;
+      running = true;
+      clearInterval(timerId);
+      timerId = setInterval(tick, 1000);
+      startOverlay.classList.add('hidden');
+      endOverlay.classList.add('hidden');
+      clearSelection();
+      render();
+      if (!findAnyTen()) shuffleActive(true);
+    }
+
+    function tick() {
+      if (!running) return;
+      timeLeft -= 1;
+      if (timeLeft <= 0) endGame('时间到');
+      updateHud();
+    }
+
+    function endGame(title) {
+      running = false;
+      clearInterval(timerId);
+      endTitle.textContent = title;
+      endText.textContent = `本局得分 ${score}。`;
+      endOverlay.classList.remove('hidden');
+    }
+
+    function render() {
+      board.querySelectorAll('.cell').forEach(el => el.remove());
+      const frag = document.createDocumentFragment();
+      for (const cell of cells) {
+        const el = document.createElement('button');
+        el.className = `cell${cell.active ? '' : ' empty'}`;
+        el.dataset.id = cell.id;
+        el.style.gridColumn = `${cell.col + 1}`;
+        el.style.gridRow = `${cell.row + 1}`;
+        el.innerHTML = `<span class="apple">${cell.value}</span>`;
+        frag.appendChild(el);
+      }
+      board.appendChild(frag);
+      updateHud();
+    }
+
+    function updateHud() {
+      scoreText.textContent = score;
+      timeText.textContent = formatTime(Math.max(0, timeLeft));
+      const percent = Math.max(0, Math.min(100, (timeLeft / gameTime) * 100));
+      timeFill.style.height = `${percent}%`;
+      timeFill.style.width = window.matchMedia('(max-width: 720px)').matches ? `${percent}%` : '100%';
+      timeFill.classList.toggle('low', percent <= 24);
+    }
+
+    function formatTime(seconds) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+    }
+
+    function cellFromPoint(evt) {
+      const point = evt.touches ? evt.touches[0] : evt;
+      const rect = board.getBoundingClientRect();
+      const x = point.clientX - rect.left;
+      const y = point.clientY - rect.top;
+      const col = Math.max(0, Math.min(cols - 1, Math.floor(x / (rect.width / cols))));
+      const row = Math.max(0, Math.min(rows - 1, Math.floor(y / (rect.height / rows))));
+      return { row, col };
+    }
+
+    function cellsInRect(a, b) {
+      const minRow = Math.min(a.row, b.row);
+      const maxRow = Math.max(a.row, b.row);
+      const minCol = Math.min(a.col, b.col);
+      const maxCol = Math.max(a.col, b.col);
+      return cells.filter(cell => (
+        cell.active &&
+        cell.row >= minRow && cell.row <= maxRow &&
+        cell.col >= minCol && cell.col <= maxCol
+      ));
+    }
+
+    function updateSelection(evt) {
+      dragEnd = cellFromPoint(evt);
+      currentSelection = cellsInRect(dragStart, dragEnd);
+      const rect = board.getBoundingClientRect();
+      const cellW = rect.width / cols;
+      const cellH = rect.height / rows;
+      const minCol = Math.min(dragStart.col, dragEnd.col);
+      const maxCol = Math.max(dragStart.col, dragEnd.col);
+      const minRow = Math.min(dragStart.row, dragEnd.row);
+      const maxRow = Math.max(dragStart.row, dragEnd.row);
+      const pad = Math.max(4, rect.width * .006);
+
+      selection.style.display = 'block';
+      selection.style.left = `${minCol * cellW + pad}px`;
+      selection.style.top = `${minRow * cellH + pad}px`;
+      selection.style.width = `${(maxCol - minCol + 1) * cellW - pad * 2}px`;
+      selection.style.height = `${(maxRow - minRow + 1) * cellH - pad * 2}px`;
+
+      const sum = currentSelection.reduce((acc, cell) => acc + cell.value, 0);
+      const ready = sum === 10 && currentSelection.length > 0;
+      selection.classList.toggle('ready', ready);
+
+      board.querySelectorAll('.cell.selected').forEach(el => el.classList.remove('selected'));
+      for (const cell of currentSelection) {
+        board.querySelector(`[data-id="${cell.id}"]`)?.classList.add('selected');
+      }
+      updateHud();
+    }
+
+    function finishSelection() {
+      if (!dragging) return;
+      dragging = false;
+      const sum = currentSelection.reduce((acc, cell) => acc + cell.value, 0);
+      if (sum === 10 && currentSelection.length > 0) {
+        for (const cell of currentSelection) {
+          cell.active = false;
+          board.querySelector(`[data-id="${cell.id}"]`)?.classList.add('good');
+        }
+        score += currentSelection.length;
+        left -= currentSelection.length;
+        showFloatScore(currentSelection, currentSelection.length);
+        setTimeout(render, 180);
+        if (left <= 0) setTimeout(() => endGame('全部清空'), 220);
+        else if (!findAnyTen()) setTimeout(() => shuffleActive(true), 260);
+      }
+      clearSelection();
+      updateHud();
+    }
+
+    function showFloatScore(group, amount) {
+      const rect = board.getBoundingClientRect();
+      const avgCol = group.reduce((acc, cell) => acc + cell.col, 0) / group.length;
+      const avgRow = group.reduce((acc, cell) => acc + cell.row, 0) / group.length;
+      const badge = document.createElement('div');
+      badge.className = 'float-score';
+      badge.textContent = `+${amount}`;
+      badge.style.left = `${(avgCol + .5) * (rect.width / cols) - 14}px`;
+      badge.style.top = `${(avgRow + .5) * (rect.height / rows) - 18}px`;
+      board.appendChild(badge);
+      setTimeout(() => badge.remove(), 700);
+    }
+
+    function clearSelection() {
+      dragging = false;
+      dragStart = null;
+      dragEnd = null;
+      currentSelection = [];
+      selection.style.display = 'none';
+      selection.classList.remove('ready');
+      sumBadge.style.display = 'none';
+      sumBadge.classList.remove('ready');
+      board.querySelectorAll('.cell.selected, .cell.hint').forEach(el => {
+        el.classList.remove('selected');
+        el.classList.remove('hint');
+      });
+      hintCells = [];
+      updateHud();
+    }
+
+    function showHint() {
+      if (!running) return;
+      clearSelection();
+      const found = findAnyTen();
+      if (!found) return;
+      hintCells = found;
+      for (const cell of hintCells) {
+        const el = board.querySelector(`[data-id="${cell.id}"]`);
+        if (el) el.classList.add('selected', 'hint');
+      }
+      currentSelection = found;
+      updateHud();
+    }
+
+    function findAnyTen() {
+      for (let r1 = 0; r1 < rows; r1++) {
+        for (let c1 = 0; c1 < cols; c1++) {
+          for (let r2 = r1; r2 < Math.min(rows, r1 + 4); r2++) {
+            for (let c2 = c1; c2 < Math.min(cols, c1 + 4); c2++) {
+              const group = cells.filter(cell => (
+                cell.active &&
+                cell.row >= r1 && cell.row <= r2 &&
+                cell.col >= c1 && cell.col <= c2
+              ));
+              const sum = group.reduce((acc, cell) => acc + cell.value, 0);
+              if (group.length > 0 && sum === 10) return group;
+              if (sum > 10) break;
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    function shuffleActive(silent = false) {
+      if (!running) return;
+      const activeValues = cells.filter(cell => cell.active).map(cell => cell.value);
+      for (let i = activeValues.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [activeValues[i], activeValues[j]] = [activeValues[j], activeValues[i]];
+      }
+      let idx = 0;
+      for (const cell of cells) {
+        if (cell.active) cell.value = activeValues[idx++];
+      }
+      clearSelection();
+      render();
+      if (!silent && !findAnyTen()) setTimeout(() => shuffleActive(true), 80);
+    }
+
+    board.addEventListener('pointerdown', evt => {
+      if (!running) return;
+      board.setPointerCapture?.(evt.pointerId);
+      dragging = true;
+      dragStart = cellFromPoint(evt);
+      updateSelection(evt);
+    });
+
+    board.addEventListener('pointermove', evt => {
+      if (!dragging || !running) return;
+      updateSelection(evt);
+    });
+
+    window.addEventListener('pointerup', finishSelection);
+    window.addEventListener('pointercancel', finishSelection);
+    board.addEventListener('pointerleave', () => {
+      if (dragging) finishSelection();
+    });
+
+    document.getElementById('startBtn').addEventListener('click', newGame);
+    document.getElementById('againBtn').addEventListener('click', newGame);
+    document.getElementById('newBtn').addEventListener('click', newGame);
+    document.getElementById('hintBtn').addEventListener('click', showHint);
+    document.getElementById('shuffleBtn').addEventListener('click', () => shuffleActive(false));
+
+    window.addEventListener('resize', () => {
+      const before = `${rows}x${cols}`;
+      applyBoardConfig();
+      const after = `${rows}x${cols}`;
+      if (!running && before !== after) render();
+    });
+
+    applyBoardConfig();
+    render();
+  </script>
+
+
+</body></html>
