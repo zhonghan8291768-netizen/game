@@ -3,406 +3,429 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>果盒守卫战 V3 - 自动射击防守小游戏</title>
+<title>果盒守卫战</title>
 <style>
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", Arial, sans-serif;
-    background: radial-gradient(circle at 50% 10%, #244b82, #06101e 64%);
-    color: #fff;
-  }
-  #app { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
-  #phone {
-    width: min(100vw, 480px);
-    height: min(100vh, 860px);
-    position: relative;
-    overflow: hidden;
-    background: #08101d;
-    box-shadow: 0 0 40px rgba(0,0,0,.35);
-  }
-  canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-    background:
-      radial-gradient(circle at 50% 84%, rgba(98, 211, 255, .18), transparent 22%),
-      linear-gradient(180deg, #172b4f 0%, #101c34 54%, #07101d 100%);
-  }
-  .screen {
-    position: absolute;
-    inset: 0;
-    z-index: 20;
-    display: none;
-    background:
-      radial-gradient(circle at 50% 12%, rgba(90,177,255,.25), transparent 34%),
-      linear-gradient(180deg, #132746, #07101d);
-    padding: 18px;
-    overflow-y: auto;
-  }
-  .screen.active { display: block; }
-  .topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
-  .pill {
-    background: rgba(0,0,0,.28);
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 999px;
-    padding: 8px 12px;
-    font-size: 13px;
-    color: #dbe9ff;
-  }
-  .title { margin: 18px 0 8px; font-size: 34px; letter-spacing: 1px; text-align: center; }
-  .sub { color: #c9dcff; text-align: center; line-height: 1.6; margin: 0 auto 18px; max-width: 390px; }
-  .card {
-    background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.055));
-    border: 1px solid rgba(255,255,255,.13);
-    border-radius: 20px;
-    padding: 15px;
-    margin: 12px 0;
-    backdrop-filter: blur(8px);
-  }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  button {
-    border: 0;
-    border-radius: 15px;
-    padding: 13px 14px;
-    font-size: 15px;
-    font-weight: 800;
-    color: #08101d;
-    background: linear-gradient(180deg, #ffdf72, #ffb235);
-    box-shadow: 0 6px 0 rgba(127,75,8,.55);
-    cursor: pointer;
-  }
-  button:active { transform: translateY(2px); box-shadow: 0 4px 0 rgba(127,75,8,.55); }
-  button.secondary { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.18); box-shadow: none; }
-  button.danger { background: linear-gradient(180deg, #ff8b8b, #ff5656); box-shadow: 0 6px 0 rgba(105,25,25,.55); }
-  button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-  .bigbtn { width: 100%; margin: 8px 0; padding: 15px 16px; font-size: 17px; }
-  .muted { color: rgba(219,233,255,.76); font-size: 13px; line-height: 1.6; }
-  .small { font-size: 12px; color: rgba(219,233,255,.70); line-height: 1.45; }
-  .tag {
-    display: inline-block;
-    border-radius: 999px;
-    padding: 3px 8px;
-    margin-left: 6px;
-    background: rgba(98,211,255,.16);
-    color: #bdeeff;
-    font-size: 11px;
-  }
-  .level-map { position: relative; padding: 8px 0 18px; }
-  .level-node {
-    position: relative;
-    width: 92%;
-    margin: 12px auto;
-    border-radius: 20px;
-    padding: 14px;
-    background: rgba(0,0,0,.24);
-    border: 1px solid rgba(255,255,255,.12);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-  }
-  .level-node:nth-child(even) { transform: translateX(12px); }
-  .level-node:nth-child(odd) { transform: translateX(-12px); }
-  .level-node.lock { opacity: .45; filter: grayscale(1); }
-  .node-icon { font-size: 28px; }
-  .upgrade-item, .skill-item, .mission-item {
-    background: rgba(0,0,0,.22);
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 18px;
-    padding: 13px;
-    margin: 10px 0;
-  }
-  .bar {
-    height: 8px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: rgba(255,255,255,.12);
-    margin-top: 8px;
-  }
-  .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, #64d9ff, #fff170); }
-  .battle-ui { position: absolute; inset: 0; pointer-events: none; z-index: 8; display: none; }
-  .battle-ui.active { display: block; }
-  .hud {
-    position: absolute;
-    left: 12px; right: 12px; top: 12px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 7px;
-  }
-  .hud .box {
-    background: rgba(0,0,0,.38);
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 12px;
-    padding: 7px 5px;
-    text-align: center;
-    font-size: 12px;
-    backdrop-filter: blur(6px);
-  }
-  .expbar {
-    position: absolute;
-    left: 16px; right: 16px; top: 72px;
-    height: 8px;
-    background: rgba(255,255,255,.12);
-    border-radius: 999px;
-    overflow: hidden;
-  }
-  #expFill { height: 100%; width: 0%; background: linear-gradient(90deg, #5cd7ff, #fff170); }
-  .bossbar-wrap {
-    position: absolute;
-    left: 18px; right: 18px; top: 90px;
-    display: none;
-  }
-  .boss-name { text-align: center; font-size: 12px; color: #ffe9a8; margin-bottom: 4px; text-shadow: 0 1px 5px #000; }
-  .bossbar { height: 12px; background: rgba(0,0,0,.48); border: 1px solid rgba(255,255,255,.2); border-radius: 999px; overflow: hidden; }
-  #bossFill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff5858, #ffcf5b); }
-  .battle-tip {
-    position: absolute;
-    left: 16px; right: 16px; bottom: 14px;
-    text-align: center;
-    font-size: 12px;
-    color: rgba(255,255,255,.72);
-  }
-  .pause-btn {
-    pointer-events: auto;
-    position: absolute;
-    right: 14px;
-    top: 86px;
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    border-radius: 50%;
-    box-shadow: none;
-    background: rgba(0,0,0,.35);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,.18);
-  }
-  .big-warning {
-    position: absolute;
-    left: 16px;
-    right: 16px;
-    top: 138px;
-    text-align: center;
-    font-weight: 900;
-    font-size: 20px;
-    color: #ffe071;
-    text-shadow: 0 2px 12px #000;
-    display: none;
-  }
-  .guide-bubble {
-    position: absolute;
-    left: 18px;
-    right: 18px;
-    bottom: 56px;
-    background: rgba(0,0,0,.55);
-    border: 1px solid rgba(255,255,255,.14);
-    border-radius: 16px;
-    padding: 12px;
-    color: #eaf3ff;
-    font-size: 13px;
-    text-align: center;
-    display: none;
-  }
-  .modal {
-    position: absolute;
-    inset: 0;
-    z-index: 30;
-    background: rgba(3,8,17,.78);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-  }
-  .modal.active { display: flex; }
-  .modal-card {
-    width: 100%;
-    max-width: 390px;
-    background: linear-gradient(180deg, rgba(25,48,84,.98), rgba(11,21,38,.98));
-    border: 1px solid rgba(255,255,255,.15);
-    border-radius: 24px;
-    padding: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.38);
-    text-align: center;
-  }
-  .modal-card h2 { margin: 0 0 10px; }
-  .choices { display: grid; gap: 10px; margin-top: 14px; }
-  .choice {
-    text-align: left;
-    border: 1px solid rgba(255,255,255,.15);
-    background: rgba(255,255,255,.09);
-    border-radius: 16px;
-    padding: 13px;
-    cursor: pointer;
-  }
-  .choice b { display: block; margin-bottom: 4px; }
-  .choice span { color: #cfe0ff; font-size: 13px; line-height: 1.5; }
-  .toast {
-    position: absolute;
-    z-index: 55;
-    left: 50%;
-    top: 16px;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,.72);
-    border: 1px solid rgba(255,255,255,.14);
-    color: #fff;
-    border-radius: 999px;
-    padding: 9px 14px;
-    font-size: 13px;
-    display: none;
-    white-space: nowrap;
-  }
+ * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+ body {
+  font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", Arial, sans-serif;
+  background: radial-gradient(circle at 50% 10%, #244b82, #06101e 64%);
+  color: #fff;
+ }
+ #app { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
+ #phone {
+  width: min(100vw, 480px);
+  height: min(100vh, 860px);
+  position: relative;
+  overflow: hidden;
+  background: #08101d;
+  box-shadow: 0 0 40px rgba(0,0,0,.35);
+ }
+ canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background:
+   radial-gradient(circle at 50% 84%, rgba(98, 211, 255, .18), transparent 22%),
+   linear-gradient(180deg, #172b4f 0%, #101c34 54%, #07101d 100%);
+ }
+ .screen {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  background:
+   radial-gradient(circle at 50% 12%, rgba(90,177,255,.25), transparent 34%),
+   linear-gradient(180deg, #132746, #07101d);
+  padding: 18px;
+  overflow-y: auto;
+ }
+ .screen.active { display: block; }
+ .topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
+ .pill {
+  background: rgba(0,0,0,.28);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #dbe9ff;
+ }
+ .title { margin: 18px 0 8px; font-size: 34px; letter-spacing: 1px; text-align: center; }
+ .sub { color: #c9dcff; text-align: center; line-height: 1.6; margin: 0 auto 18px; max-width: 390px; }
+ .card {
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.055));
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 20px;
+  padding: 15px;
+  margin: 12px 0;
+  backdrop-filter: blur(8px);
+ }
+ .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+ .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+ button {
+  border: 0;
+  border-radius: 15px;
+  padding: 13px 14px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #08101d;
+  background: linear-gradient(180deg, #ffdf72, #ffb235);
+  box-shadow: 0 6px 0 rgba(127,75,8,.55);
+  cursor: pointer;
+ }
+ button:active { transform: translateY(2px); box-shadow: 0 4px 0 rgba(127,75,8,.55); }
+ button.secondary { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.18); box-shadow: none; }
+ button.danger { background: linear-gradient(180deg, #ff8b8b, #ff5656); box-shadow: 0 6px 0 rgba(105,25,25,.55); }
+ button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+ .bigbtn { width: 100%; margin: 8px 0; padding: 15px 16px; font-size: 17px; }
+ .muted { color: rgba(219,233,255,.76); font-size: 13px; line-height: 1.6; }
+ .small { font-size: 12px; color: rgba(219,233,255,.70); line-height: 1.45; }
+ .tag {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 3px 8px;
+  margin-left: 6px;
+  background: rgba(98,211,255,.16);
+  color: #bdeeff;
+  font-size: 11px;
+ }
+ .level-map { position: relative; padding: 8px 0 18px; }
+ .level-node {
+  position: relative;
+  width: 92%;
+  margin: 12px auto;
+  border-radius: 20px;
+  padding: 14px;
+  background: rgba(0,0,0,.24);
+  border: 1px solid rgba(255,255,255,.12);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+ }
+ .level-node:nth-child(even) { transform: translateX(12px); }
+ .level-node:nth-child(odd) { transform: translateX(-12px); }
+ .level-node.lock { opacity: .45; filter: grayscale(1); }
+ .node-icon { font-size: 28px; }
+ .upgrade-item, .skill-item, .mission-item {
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  padding: 13px;
+  margin: 10px 0;
+ }
+ .bar {
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,.12);
+  margin-top: 8px;
+ }
+ .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, #64d9ff, #fff170); }
+ .battle-ui { position: absolute; inset: 0; pointer-events: none; z-index: 8; display: none; }
+ .battle-ui.active { display: block; }
+ .hud {
+  position: absolute;
+  left: 12px; right: 12px; top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+ }
+ .hud .box {
+  background: rgba(0,0,0,.38);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+  padding: 7px 5px;
+  text-align: center;
+  font-size: 12px;
+  backdrop-filter: blur(6px);
+ }
+ .expbar {
+  position: absolute;
+  left: 16px; right: 16px; top: 72px;
+  height: 8px;
+  background: rgba(255,255,255,.12);
+  border-radius: 999px;
+  overflow: hidden;
+ }
+ #expFill { height: 100%; width: 0%; background: linear-gradient(90deg, #5cd7ff, #fff170); }
+ .bossbar-wrap {
+  position: absolute;
+  left: 18px; right: 18px; top: 90px;
+  display: none;
+ }
+ .boss-name { text-align: center; font-size: 12px; color: #ffe9a8; margin-bottom: 4px; text-shadow: 0 1px 5px #000; }
+ .bossbar { height: 12px; background: rgba(0,0,0,.48); border: 1px solid rgba(255,255,255,.2); border-radius: 999px; overflow: hidden; }
+ #bossFill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff5858, #ffcf5b); }
+ .battle-tip {
+  position: absolute;
+  left: 16px; right: 16px; bottom: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,.72);
+ }
+ .pause-btn {
+  pointer-events: auto;
+  position: absolute;
+  right: 14px;
+  top: 86px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: none;
+  background: rgba(0,0,0,.35);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.18);
+ }
+
+ .weapon-label {
+  position: absolute;
+  left: 16px;
+  bottom: 42px;
+  max-width: calc(100% - 32px);
+  background: rgba(0,0,0,.42);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 12px;
+  color: #eaf3ff;
+  text-align: center;
+  backdrop-filter: blur(6px);
+ }
+
+ .big-warning {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  top: 138px;
+  text-align: center;
+  font-weight: 900;
+  font-size: 20px;
+  color: #ffe071;
+  text-shadow: 0 2px 12px #000;
+  display: none;
+ }
+ .guide-bubble {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 56px;
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 16px;
+  padding: 12px;
+  color: #eaf3ff;
+  font-size: 13px;
+  text-align: center;
+  display: none;
+ }
+ .modal {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: rgba(3,8,17,.78);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+ }
+ .modal.active { display: flex; }
+ .modal-card {
+  width: 100%;
+  max-width: 390px;
+  background: linear-gradient(180deg, rgba(25,48,84,.98), rgba(11,21,38,.98));
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.38);
+  text-align: center;
+ }
+ .modal-card h2 { margin: 0 0 10px; }
+ .choices { display: grid; gap: 10px; margin-top: 14px; }
+ .choice {
+  text-align: left;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.09);
+  border-radius: 16px;
+  padding: 13px;
+  cursor: pointer;
+ }
+ .choice b { display: block; margin-bottom: 4px; }
+ .choice span { color: #cfe0ff; font-size: 13px; line-height: 1.5; }
+ .toast {
+  position: absolute;
+  z-index: 55;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.72);
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fff;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 13px;
+  display: none;
+  white-space: nowrap;
+ }
 </style>
 </head>
 <body>
 <div id="app">
-  <div id="phone">
-    <canvas id="canvas"></canvas>
-    <div id="toast" class="toast"></div>
+ <div id="phone">
+  <canvas id="canvas"></canvas>
+  <div id="toast" class="toast"></div>
 
-    <div id="battleUI" class="battle-ui">
-      <div class="hud">
-        <div class="box">关卡<br><b id="hudStage">1</b></div>
-        <div class="box">生命<br><b id="hudHp">10</b></div>
-        <div class="box">金币<br><b id="hudCoin">0</b></div>
-        <div class="box">局内等级<br><b id="hudLv">1</b></div>
-      </div>
-      <div class="expbar"><div id="expFill"></div></div>
-      <div id="bossBarWrap" class="bossbar-wrap">
-        <div class="boss-name" id="bossName">腐烂西瓜王</div>
-        <div class="bossbar"><div id="bossFill"></div></div>
-      </div>
-      <button id="pauseBtn" class="pause-btn">Ⅱ</button>
-      <div id="bigWarning" class="big-warning"></div>
-      <div id="guideBubble" class="guide-bubble"></div>
-      <div class="battle-tip">拖动果篮移动，自动锁定最近敌人。靠近防线会触发警报。</div>
-    </div>
-
-    <section id="home" class="screen active">
-      <div class="topbar">
-        <div class="pill">🍊 金币：<b id="homeCoins">0</b></div>
-        <div class="pill">⭐ 已解锁：第 <b id="homeUnlocked">1</b> 关</div>
-      </div>
-
-      <h1 class="title">🍓 果盒守卫战</h1>
-      <p class="sub">V3 增强版：爽感反馈、Boss 血条、技能图鉴、每日任务、技能组合、新手引导都加上了。</p>
-
-      <div class="card">
-        <div class="row">
-          <div>
-            <b>下一关：<span id="nextStageName">水果摊入口</span></b>
-            <div class="muted" id="nextStageDesc">慢速小怪，适合熟悉守线目标。</div>
-          </div>
-          <div style="font-size:34px">🧺</div>
-        </div>
-        <button id="quickStart" class="bigbtn">开始战斗</button>
-        <div class="grid">
-          <button id="openLevels" class="secondary">章节地图</button>
-          <button id="openUpgrade" class="secondary">升级果篮</button>
-          <button id="openSkills" class="secondary">技能图鉴</button>
-          <button id="openMissions" class="secondary">每日任务</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <b>今日进度</b>
-        <p class="muted" id="todaySummary">今日任务加载中。</p>
-      </div>
-
-      <div class="grid">
-        <button id="openGuide" class="secondary">玩法说明</button>
-        <button id="resetSave" class="secondary">重置存档</button>
-      </div>
-    </section>
-
-    <section id="levels" class="screen">
-      <div class="topbar">
-        <button class="secondary backHome">返回</button>
-        <div class="pill">章节地图</div>
-      </div>
-      <div class="level-map" id="levelList"></div>
-    </section>
-
-    <section id="upgradeScreen" class="screen">
-      <div class="topbar">
-        <button class="secondary backHome">返回</button>
-        <div class="pill">🍊 金币：<b id="upgradeCoins">0</b></div>
-      </div>
-      <h2>升级果篮</h2>
-      <p class="muted">局外成长让失败也有收益：升级后下一局会明显更容易。</p>
-      <div id="upgradeList"></div>
-    </section>
-
-    <section id="skillsScreen" class="screen">
-      <div class="topbar">
-        <button class="secondary backHome">返回</button>
-        <div class="pill">技能图鉴</div>
-      </div>
-      <h2>技能图鉴</h2>
-      <p class="muted">技能会随着关卡推进逐步解锁。选择同流派技能会触发组合效果。</p>
-      <div id="skillList"></div>
-    </section>
-
-    <section id="missionsScreen" class="screen">
-      <div class="topbar">
-        <button class="secondary backHome">返回</button>
-        <div class="pill">每日任务</div>
-      </div>
-      <h2>每日任务</h2>
-      <p class="muted">用最简单的每日目标制造回访理由。任务每天自动刷新。</p>
-      <div id="missionList"></div>
-    </section>
-
-    <section id="guide" class="screen">
-      <div class="topbar">
-        <button class="secondary backHome">返回</button>
-        <div class="pill">设计说明</div>
-      </div>
-      <div class="card">
-        <b>V3 优化点</b>
-        <p class="muted">新增命中闪光、震屏、击杀数字、连杀提示、Boss 血条、Boss 技能提示、技能组合效果、每日任务、技能图鉴和新手第一局引导。</p>
-      </div>
-      <div class="card">
-        <b>核心目标</b>
-        <p class="muted">让玩家在 60 秒内经历“看懂目标 → 第一次强化 → 火力变密 → 危机解除 → 结算成长”，然后回基地升级并挑战下一关。</p>
-      </div>
-      <button class="bigbtn backHome">回到首页</button>
-    </section>
-
-    <div id="upgradeModal" class="modal">
-      <div class="modal-card">
-        <h2>三选一强化</h2>
-        <p class="muted">选择一个局内技能。连续选择同流派会触发组合效果。</p>
-        <div id="choices" class="choices"></div>
-      </div>
-    </div>
-
-    <div id="resultModal" class="modal">
-      <div class="modal-card">
-        <h2 id="resultTitle">挑战结束</h2>
-        <p id="resultText" class="muted"></p>
-        <div class="card" style="text-align:left">
-          <div class="row"><span>本局奖励</span><b>🍊 <span id="resultReward">0</span></b></div>
-          <div class="row"><span>击败怪物</span><b><span id="resultKills">0</span></b></div>
-          <div class="row"><span>最高局内等级</span><b><span id="resultLevel">1</span></b></div>
-          <div class="row"><span>最大连杀</span><b><span id="resultCombo">0</span></b></div>
-        </div>
-        <button id="claimReward" class="bigbtn">领取奖励返回基地</button>
-        <button id="doubleReward" class="secondary bigbtn">模拟激励视频：金币 ×2</button>
-        <button id="reviveBtn" class="secondary bigbtn">模拟激励视频：复活一次</button>
-      </div>
-    </div>
-
-    <div id="pauseModal" class="modal">
-      <div class="modal-card">
-        <h2>暂停</h2>
-        <button id="resumeBtn" class="bigbtn">继续战斗</button>
-        <button id="quitBtn" class="secondary bigbtn">退出到基地</button>
-      </div>
-    </div>
+  <div id="battleUI" class="battle-ui">
+   <div class="hud">
+    <div class="box">关卡<br><b id="hudStage">1</b></div>
+    <div class="box">生命<br><b id="hudHp">10</b></div>
+    <div class="box">金币<br><b id="hudCoin">0</b></div>
+    <div class="box">局内等级<br><b id="hudLv">1</b></div>
+   </div>
+   <div class="expbar"><div id="expFill"></div></div>
+   <div id="bossBarWrap" class="bossbar-wrap">
+    <div class="boss-name" id="bossName">腐烂西瓜王</div>
+    <div class="bossbar"><div id="bossFill"></div></div>
+   </div>
+   <button id="pauseBtn" class="pause-btn">Ⅱ</button>
+   <div id="bigWarning" class="big-warning"></div>
+   <div id="guideBubble" class="guide-bubble"></div>
+   <div id="weaponLabel" class="weapon-label">当前武器：基础果核</div>
+   <div class="battle-tip">拖动果篮移动，自动锁定最近敌人。靠近防线会触发警报。</div>
   </div>
+
+  <section id="home" class="screen active">
+   <div class="topbar">
+    <div class="pill">🍊 金币：<b id="homeCoins">0</b></div>
+    <div class="pill">⭐ 已解锁：第 <b id="homeUnlocked">1</b> 关</div>
+   </div>
+
+   <h1 class="title">🍓 果盒守卫战</h1>
+
+   <div class="card">
+    <div class="row">
+     <div>
+      <b>下一关：<span id="nextStageName">水果摊入口</span></b>
+      <div class="muted" id="nextStageDesc">慢速小怪，适合熟悉守线目标。</div>
+     </div>
+     <div style="font-size:34px">🧺</div>
+    </div>
+    <button id="quickStart" class="bigbtn">开始主线战斗</button>
+    <button id="startEndless" class="secondary bigbtn">无尽模式：挑战最高击杀</button>
+    <div class="grid">
+     <button id="openLevels" class="secondary">章节地图</button>
+     <button id="openUpgrade" class="secondary">升级果篮</button>
+     <button id="openSkills" class="secondary">技能图鉴</button>
+     <button id="openMissions" class="secondary">每日任务</button>
+    </div>
+   </div>
+
+   <div class="card">
+    <b>无尽纪录</b>
+    <p class="muted" id="endlessSummary">最高击杀 0，最长生存 0 秒。</p>
+   </div>
+
+   <div class="card">
+    <b>今日进度</b>
+    <p class="muted" id="todaySummary">今日任务加载中。</p>
+   </div>
+
+   <div class="grid">
+    <button id="openGuide" class="secondary">玩法说明</button>
+    <button id="resetSave" class="secondary">重置存档</button>
+   </div>
+  </section>
+
+  <section id="levels" class="screen">
+   <div class="topbar">
+    <button class="secondary backHome">返回</button>
+    <div class="pill">章节地图</div>
+   </div>
+   <div class="level-map" id="levelList"></div>
+  </section>
+
+  <section id="upgradeScreen" class="screen">
+   <div class="topbar">
+    <button class="secondary backHome">返回</button>
+    <div class="pill">🍊 金币：<b id="upgradeCoins">0</b></div>
+   </div>
+   <h2>升级果篮</h2>
+   <p class="muted">局外成长让失败也有收益：升级后下一局会明显更容易。</p>
+   <div id="upgradeList"></div>
+  </section>
+
+  <section id="skillsScreen" class="screen">
+   <div class="topbar">
+    <button class="secondary backHome">返回</button>
+    <div class="pill">技能图鉴</div>
+   </div>
+   <h2>技能图鉴</h2>
+   <p class="muted">技能会随着关卡推进逐步解锁。不同流派拥有更明显的武器特效，选择同流派技能会触发组合效果。</p>
+   <div id="skillList"></div>
+  </section>
+
+  <section id="missionsScreen" class="screen">
+   <div class="topbar">
+    <button class="secondary backHome">返回</button>
+    <div class="pill">每日任务</div>
+   </div>
+   <h2>每日任务</h2>
+   <p class="muted">用最简单的每日目标制造回访理由。任务每天自动刷新。</p>
+   <div id="missionList"></div>
+  </section>
+
+  <section id="guide" class="screen">
+   <div class="topbar">
+    <button class="secondary backHome">返回</button>
+    <div class="pill">设计说明</div>
+   </div>
+   <div class="card">
+    <b> 优化点</b>
+    <p class="muted">在 基础上保留命中闪光、震屏、击杀数字、连杀提示、Boss 血条、技能组合、每日任务等内容，并新增尾部清怪环节和无尽模式。</p>
+   </div>
+   <div class="card">
+    <b>核心体验</b>
+    <p class="muted">主线关卡仍保持 的击杀升级节奏，不额外增加保底技能弹窗；当达成关卡目标后，不立刻结算，而是进入一段尾部清怪时间，让玩家用已经成型的火力继续爽一会儿。</p>
+   </div>
+   <button class="bigbtn backHome">回到首页</button>
+  </section>
+
+  <div id="upgradeModal" class="modal">
+   <div class="modal-card">
+    <h2>三选一强化</h2>
+    <p class="muted">选择一个局内技能。连续选择同流派会触发组合效果。</p>
+    <div id="choices" class="choices"></div>
+   </div>
+  </div>
+
+  <div id="resultModal" class="modal">
+   <div class="modal-card">
+    <h2 id="resultTitle">挑战结束</h2>
+    <p id="resultText" class="muted"></p>
+    <div class="card" style="text-align:left">
+     <div class="row"><span>本局奖励</span><b>🍊 <span id="resultReward">0</span></b></div>
+     <div class="row"><span>击败怪物</span><b><span id="resultKills">0</span></b></div>
+     <div class="row"><span>生存时间</span><b><span id="resultTime">0</span> 秒</b></div>
+     <div class="row"><span>最高局内等级</span><b><span id="resultLevel">1</span></b></div>
+     <div class="row"><span>最大连杀</span><b><span id="resultCombo">0</span></b></div>
+    </div>
+    <button id="claimReward" class="bigbtn">领取奖励返回基地</button>
+    <button id="doubleReward" class="secondary bigbtn">模拟激励视频：金币 ×2</button>
+    <button id="reviveBtn" class="secondary bigbtn">模拟激励视频：复活一次</button>
+   </div>
+  </div>
+
+  <div id="pauseModal" class="modal">
+   <div class="modal-card">
+    <h2>暂停</h2>
+    <button id="resumeBtn" class="bigbtn">继续战斗</button>
+    <button id="quitBtn" class="secondary bigbtn">退出到基地</button>
+   </div>
+  </div>
+ </div>
 </div>
 
 <script>
@@ -410,101 +433,114 @@
 const SAVE_KEY = 'fruit_defense_v3_save';
 
 const stages = [
-  { id:1, icon:'🍓', name:'水果摊入口', desc:'教学关：慢速小怪，第一次体验三选一强化。', target:28, reward:45, unlockSkill:['multi','rate'], enemy:['normal'] },
-  { id:2, icon:'🍋', name:'甜品街拐角', desc:'快速怪出现，压迫感提升。', target:42, reward:65, unlockSkill:['pierce'], enemy:['normal','fast'] },
-  { id:3, icon:'🍉', name:'冷库防线', desc:'厚血怪出现，爆炸技能更有价值。', target:52, reward:85, unlockSkill:['splash'], enemy:['normal','fast','tank'] },
-  { id:4, icon:'🫐', name:'夜市混战', desc:'分裂怪加入，考验范围伤害和控场。', target:62, reward:110, unlockSkill:['slow'], enemy:['normal','fast','tank','split'] },
-  { id:5, icon:'👑', name:'腐烂西瓜王', desc:'第一章 Boss 关，击败后解锁暴击技能。', target:45, reward:150, boss:true, unlockSkill:['crit'], enemy:['normal','fast','tank'] },
-  { id:6, icon:'🏭', name:'果汁工厂', desc:'怪物更密集，适合测试多重和爆炸流派。', target:80, reward:180, enemy:['normal','fast','tank','split'] },
-  { id:7, icon:'❄️', name:'冰柜失守', desc:'高速怪更多，冰霜控场更关键。', target:92, reward:220, enemy:['normal','fast','split'] },
-  { id:8, icon:'💀', name:'坏果核心', desc:'第二个 Boss，原型最终挑战。', target:70, reward:280, boss:true, hardBoss:true, enemy:['normal','fast','tank','split'] }
+ { id:1, icon:'🍓', name:'水果摊入口', desc:'教学关：慢速小怪，达成目标后进入尾部清怪。', target:28, reward:45, tailTime:16000, unlockSkill:['multi','rate'], enemy:['normal'] },
+ { id:2, icon:'🍋', name:'甜品街拐角', desc:'快速怪出现， 节奏 + 尾部爽感段。', target:42, reward:65, tailTime:18000, unlockSkill:['pierce'], enemy:['normal','fast'] },
+ { id:3, icon:'🍉', name:'冷库防线', desc:'厚血怪出现，爆炸技能在尾部继续发挥。', target:52, reward:85, tailTime:20000, unlockSkill:['splash'], enemy:['normal','fast','tank'] },
+ { id:4, icon:'🫐', name:'夜市混战', desc:'分裂怪加入，成型后有更长清怪时间。', target:62, reward:110, tailTime:22000, unlockSkill:['slow'], enemy:['normal','fast','tank','split'] },
+ { id:5, icon:'👑', name:'腐烂西瓜王', desc:'第一章 Boss 关，击败后追加短暂清场。', target:45, reward:150, tailTime:18000, boss:true, unlockSkill:['crit'], enemy:['normal','fast','tank'] },
+ { id:6, icon:'🏭', name:'果汁工厂', desc:'怪物更密集，尾部清怪更爽。', target:80, reward:180, tailTime:24000, enemy:['normal','fast','tank','split'] },
+ { id:7, icon:'❄️', name:'冰柜失守', desc:'高速怪更多，冰霜控场更关键。', target:92, reward:220, tailTime:26000, enemy:['normal','fast','split'] },
+ { id:8, icon:'💀', name:'坏果核心', desc:'第二个 Boss，击败后进入最终清场段。', target:70, reward:280, tailTime:22000, boss:true, hardBoss:true, enemy:['normal','fast','tank','split'] }
 ];
 
+const endlessStage = {
+ id:'∞',
+ icon:'🌌',
+ name:'无尽果潮',
+ desc:'没有通关目标，怪物会随时间逐渐变强，挑战最高击杀和最长生存。',
+ target:Infinity,
+ reward:0,
+ endless:true,
+ enemy:['normal','fast','tank','split']
+};
+
 const metaUpgrades = {
-  atk: { name:'果核攻击', icon:'🍊', desc:'提升每发子弹伤害', baseCost:45, max:12 },
-  rate: { name:'果篮攻速', icon:'⚡', desc:'降低自动射击间隔', baseCost:55, max:10 },
-  hp: { name:'防线生命', icon:'❤️', desc:'提高每局初始生命', baseCost:50, max:10 },
-  income: { name:'金币收益', icon:'💰', desc:'提高通关金币奖励', baseCost:70, max:8 }
+ atk: { name:'果核攻击', icon:'🍊', desc:'提升每发子弹伤害', baseCost:45, max:12 },
+ rate: { name:'果篮攻速', icon:'⚡', desc:'降低自动射击间隔', baseCost:55, max:10 },
+ hp: { name:'防线生命', icon:'❤️', desc:'提高每局初始生命', baseCost:50, max:10 },
+ income: { name:'金币收益', icon:'💰', desc:'提高通关金币奖励', baseCost:70, max:8 }
 };
 
 const skillBook = [
-  {id:'multi', icon:'🍇', name:'多重水果', type:'弹幕流', unlock:1, desc:'子弹数量增加，让火力变密。'},
-  {id:'rate', icon:'⚡', name:'急速装填', type:'攻速流', unlock:1, desc:'缩短射击间隔，提升持续输出。'},
-  {id:'pierce', icon:'🍍', name:'穿透果刺', type:'穿透流', unlock:2, desc:'子弹可以穿透更多敌人。'},
-  {id:'splash', icon:'🍉', name:'爆裂果汁', type:'爆炸流', unlock:3, desc:'命中后造成范围伤害。'},
-  {id:'slow', icon:'🫐', name:'冰霜糖浆', type:'控制流', unlock:4, desc:'命中后减速敌人，缓解压线。'},
-  {id:'crit', icon:'🎯', name:'甜蜜暴击', type:'暴击流', unlock:5, desc:'概率造成高额伤害。'},
-  {id:'repair', icon:'🛡️', name:'果皮修补', type:'生存流', unlock:1, desc:'立即恢复防线生命。'}
+ {id:'multi', icon:'🍇', name:'多重水果', type:'弹幕流', unlock:1, desc:'子弹数量增加，让火力变密。'},
+ {id:'rate', icon:'⚡', name:'急速装填', type:'攻速流', unlock:1, desc:'缩短射击间隔，提升持续输出。'},
+ {id:'pierce', icon:'🍍', name:'穿透果刺', type:'穿透流', unlock:2, desc:'子弹可以穿透更多敌人。'},
+ {id:'splash', icon:'🍉', name:'爆裂果汁', type:'爆炸流', unlock:3, desc:'命中后造成范围伤害。'},
+ {id:'slow', icon:'🫐', name:'冰霜糖浆', type:'控制流', unlock:4, desc:'命中后减速敌人，缓解压线。'},
+ {id:'crit', icon:'🎯', name:'甜蜜暴击', type:'暴击流', unlock:5, desc:'概率造成高额伤害。'},
+ {id:'repair', icon:'🛡️', name:'果皮修补', type:'生存流', unlock:1, desc:'立即恢复防线生命。'}
 ];
 
 function todayKey() {
-  const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+ const d = new Date();
+ return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 }
 
 function defaultMissions() {
-  return {
-    date: todayKey(),
-    data: {
-      clear: {name:'通关 1 次', target:1, value:0, reward:45, claimed:false},
-      kills: {name:'击败 80 个怪物', target:80, value:0, reward:55, claimed:false},
-      upgrade: {name:'升级 1 次果篮', target:1, value:0, reward:50, claimed:false},
-      boss: {name:'挑战 1 次 Boss 关', target:1, value:0, reward:60, claimed:false}
-    }
-  };
+ return {
+  date: todayKey(),
+  data: {
+   clear: {name:'通关 1 次', target:1, value:0, reward:45, claimed:false},
+   kills: {name:'击败 80 个怪物', target:80, value:0, reward:55, claimed:false},
+   upgrade: {name:'升级 1 次果篮', target:1, value:0, reward:50, claimed:false},
+   boss: {name:'挑战 1 次 Boss 关', target:1, value:0, reward:60, claimed:false}
+  }
+ };
 }
 function defaultSave() {
-  return {
-    coins: 0,
-    unlocked: 1,
-    upgrades: { atk:1, rate:1, hp:1, income:1 },
-    firstClear: {},
-    bestKills: 0,
-    missions: defaultMissions()
-  };
+ return {
+  coins: 0,
+  unlocked: 1,
+  upgrades: { atk:1, rate:1, hp:1, income:1 },
+  firstClear: {},
+  bestKills: 0,
+  endlessBestKills: 0,
+  endlessBestTime: 0,
+  missions: defaultMissions()
+ };
 }
 let save = loadSave();
 
 function loadSave() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    const s = raw ? JSON.parse(raw) : defaultSave();
-    const merged = Object.assign(defaultSave(), s);
-    merged.upgrades = Object.assign(defaultSave().upgrades, s.upgrades || {});
-    merged.firstClear = s.firstClear || {};
-    merged.missions = s.missions || defaultMissions();
-    if (merged.missions.date !== todayKey()) merged.missions = defaultMissions();
-    return merged;
-  } catch(e) {
-    return defaultSave();
-  }
+ try {
+  const raw = localStorage.getItem(SAVE_KEY);
+  const s = raw ? JSON.parse(raw) : defaultSave();
+  const merged = Object.assign(defaultSave(), s);
+  merged.upgrades = Object.assign(defaultSave().upgrades, s.upgrades || {});
+  merged.firstClear = s.firstClear || {};
+  merged.missions = s.missions || defaultMissions();
+  if (merged.missions.date !== todayKey()) merged.missions = defaultMissions();
+  return merged;
+ } catch(e) {
+  return defaultSave();
+ }
 }
 function saveGame() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
 function costOf(key) {
-  const lv = save.upgrades[key];
-  return Math.floor(metaUpgrades[key].baseCost * Math.pow(1.45, lv-1));
+ const lv = save.upgrades[key];
+ return Math.floor(metaUpgrades[key].baseCost * Math.pow(1.45, lv-1));
 }
 function addMissionProgress(key, n) {
-  const m = save.missions.data[key];
-  if (!m || m.claimed) return;
-  m.value = Math.min(m.target, m.value + n);
+ const m = save.missions.data[key];
+ if (!m || m.claimed) return;
+ m.value = Math.min(m.target, m.value + n);
 }
 function toast(text) {
-  const t = document.getElementById('toast');
-  t.textContent = text;
-  t.style.display = 'block';
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(()=>t.style.display='none', 1500);
+ const t = document.getElementById('toast');
+ t.textContent = text;
+ t.style.display = 'block';
+ clearTimeout(toast.timer);
+ toast.timer = setTimeout(()=>t.style.display='none', 1500);
 }
 
 /* ===================== 页面渲染 ===================== */
 const screens = {
-  home: document.getElementById('home'),
-  levels: document.getElementById('levels'),
-  upgrade: document.getElementById('upgradeScreen'),
-  skills: document.getElementById('skillsScreen'),
-  missions: document.getElementById('missionsScreen'),
-  guide: document.getElementById('guide')
+ home: document.getElementById('home'),
+ levels: document.getElementById('levels'),
+ upgrade: document.getElementById('upgradeScreen'),
+ skills: document.getElementById('skillsScreen'),
+ missions: document.getElementById('missionsScreen'),
+ guide: document.getElementById('guide')
 };
 const battleUI = document.getElementById('battleUI');
 const upgradeModal = document.getElementById('upgradeModal');
@@ -512,10 +548,10 @@ const resultModal = document.getElementById('resultModal');
 const pauseModal = document.getElementById('pauseModal');
 
 function showScreen(name) {
-  Object.values(screens).forEach(s=>s.classList.remove('active'));
-  screens[name].classList.add('active');
-  battleUI.classList.remove('active');
-  renderHome();
+ Object.values(screens).forEach(s=>s.classList.remove('active'));
+ screens[name].classList.add('active');
+ battleUI.classList.remove('active');
+ renderHome();
 }
 document.querySelectorAll('.backHome').forEach(btn=>btn.onclick=()=>showScreen('home'));
 document.getElementById('openLevels').onclick = () => { renderLevels(); showScreen('levels'); };
@@ -524,135 +560,137 @@ document.getElementById('openSkills').onclick = () => { renderSkills(); showScre
 document.getElementById('openMissions').onclick = () => { renderMissions(); showScreen('missions'); };
 document.getElementById('openGuide').onclick = () => showScreen('guide');
 document.getElementById('quickStart').onclick = () => startStage(save.unlocked);
+document.getElementById('startEndless').onclick = () => startEndlessMode();
 document.getElementById('resetSave').onclick = () => {
-  if (confirm('确定重置本地存档吗？')) {
-    localStorage.removeItem(SAVE_KEY);
-    save = defaultSave();
-    renderHome();
-    toast('存档已重置');
-  }
+ if (confirm('确定重置本地存档吗？')) {
+  localStorage.removeItem(SAVE_KEY);
+  save = defaultSave();
+  renderHome();
+  toast('存档已重置');
+ }
 };
 
 function renderHome() {
-  document.getElementById('homeCoins').textContent = save.coins;
-  document.getElementById('homeUnlocked').textContent = save.unlocked;
-  const s = stages[Math.min(save.unlocked, stages.length)-1];
-  document.getElementById('nextStageName').textContent = `${s.id}. ${s.name}`;
-  document.getElementById('nextStageDesc').textContent = s.desc;
-  const ms = Object.values(save.missions.data);
-  const done = ms.filter(m=>m.claimed).length;
-  const ready = ms.filter(m=>m.value >= m.target && !m.claimed).length;
-  document.getElementById('todaySummary').textContent = `已领取 ${done}/4 个任务奖励，当前有 ${ready} 个奖励可领取。`;
+ document.getElementById('homeCoins').textContent = save.coins;
+ document.getElementById('homeUnlocked').textContent = save.unlocked;
+ const s = stages[Math.min(save.unlocked, stages.length)-1];
+ document.getElementById('nextStageName').textContent = `${s.id}. ${s.name}`;
+ document.getElementById('nextStageDesc').textContent = s.desc;
+ document.getElementById('endlessSummary').textContent = `最高击杀 ${save.endlessBestKills || 0}，最长生存 ${save.endlessBestTime || 0} 秒。`;
+ const ms = Object.values(save.missions.data);
+ const done = ms.filter(m=>m.claimed).length;
+ const ready = ms.filter(m=>m.value >= m.target && !m.claimed).length;
+ document.getElementById('todaySummary').textContent = `已领取 ${done}/4 个任务奖励，当前有 ${ready} 个奖励可领取。`;
 }
 function renderLevels() {
-  const list = document.getElementById('levelList');
-  list.innerHTML = '';
-  stages.forEach(s => {
-    const locked = s.id > save.unlocked;
-    const div = document.createElement('div');
-    div.className = 'level-node' + (locked ? ' lock' : '');
-    div.innerHTML = `
-      <div class="node-icon">${s.icon}</div>
-      <div style="flex:1">
-        <b>${s.id}. ${s.name}${s.boss ? '<span class="tag">Boss</span>' : ''}${save.firstClear[s.id] ? '<span class="tag">已通关</span>' : ''}</b>
-        <div class="small">${s.desc}</div>
-      </div>
-      <button ${locked?'disabled':''}>${locked?'未解锁':'挑战'}</button>
-    `;
-    div.querySelector('button').onclick = () => startStage(s.id);
-    list.appendChild(div);
-  });
+ const list = document.getElementById('levelList');
+ list.innerHTML = '';
+ stages.forEach(s => {
+  const locked = s.id > save.unlocked;
+  const div = document.createElement('div');
+  div.className = 'level-node' + (locked ? ' lock' : '');
+  div.innerHTML = `
+   <div class="node-icon">${s.icon}</div>
+   <div style="flex:1">
+    <b>${s.id}. ${s.name}${s.boss ? '<span class="tag">Boss</span>' : ''}${save.firstClear[s.id] ? '<span class="tag">已通关</span>' : ''}</b>
+    <div class="small">${s.desc}</div>
+   </div>
+   <button ${locked?'disabled':''}>${locked?'未解锁':'挑战'}</button>
+  `;
+  div.querySelector('button').onclick = () => startStage(s.id);
+  list.appendChild(div);
+ });
 }
 function renderUpgrade() {
-  document.getElementById('upgradeCoins').textContent = save.coins;
-  const box = document.getElementById('upgradeList');
-  box.innerHTML = '';
-  Object.keys(metaUpgrades).forEach(key => {
-    const m = metaUpgrades[key];
-    const lv = save.upgrades[key];
-    const maxed = lv >= m.max;
-    const cost = costOf(key);
-    const div = document.createElement('div');
-    div.className = 'upgrade-item';
-    div.innerHTML = `
-      <div class="row">
-        <div>
-          <b>${m.icon} ${m.name} Lv.${lv}/${m.max}</b>
-          <div class="small">${m.desc}</div>
-          <div class="bar"><div style="width:${lv/m.max*100}%"></div></div>
-        </div>
-        <button ${maxed || save.coins < cost ? 'disabled' : ''}>${maxed ? '满级' : cost + ' 金币'}</button>
-      </div>
-    `;
-    div.querySelector('button').onclick = () => {
-      if (save.coins < cost || maxed) return;
-      save.coins -= cost;
-      save.upgrades[key]++;
-      addMissionProgress('upgrade', 1);
-      saveGame();
-      renderUpgrade();
-      renderHome();
-      toast('升级成功');
-    };
-    box.appendChild(div);
-  });
+ document.getElementById('upgradeCoins').textContent = save.coins;
+ const box = document.getElementById('upgradeList');
+ box.innerHTML = '';
+ Object.keys(metaUpgrades).forEach(key => {
+  const m = metaUpgrades[key];
+  const lv = save.upgrades[key];
+  const maxed = lv >= m.max;
+  const cost = costOf(key);
+  const div = document.createElement('div');
+  div.className = 'upgrade-item';
+  div.innerHTML = `
+   <div class="row">
+    <div>
+     <b>${m.icon} ${m.name} Lv.${lv}/${m.max}</b>
+     <div class="small">${m.desc}</div>
+     <div class="bar"><div style="width:${lv/m.max*100}%"></div></div>
+    </div>
+    <button ${maxed || save.coins < cost ? 'disabled' : ''}>${maxed ? '满级' : cost + ' 金币'}</button>
+   </div>
+  `;
+  div.querySelector('button').onclick = () => {
+   if (save.coins < cost || maxed) return;
+   save.coins -= cost;
+   save.upgrades[key]++;
+   addMissionProgress('upgrade', 1);
+   saveGame();
+   renderUpgrade();
+   renderHome();
+   toast('升级成功');
+  };
+  box.appendChild(div);
+ });
 }
 function renderSkills() {
-  const box = document.getElementById('skillList');
-  box.innerHTML = '';
-  skillBook.forEach(skill => {
-    const unlocked = save.unlocked >= skill.unlock;
-    const div = document.createElement('div');
-    div.className = 'skill-item' + (unlocked ? '' : ' lock');
-    div.style.opacity = unlocked ? '1' : '.45';
-    div.innerHTML = `
-      <div class="row">
-        <div>
-          <b>${skill.icon} ${skill.name}<span class="tag">${skill.type}</span></b>
-          <div class="small">${skill.desc}</div>
-          <div class="small">${unlocked ? '已解锁' : '第 ' + skill.unlock + ' 关后解锁'}</div>
-        </div>
-      </div>
-    `;
-    box.appendChild(div);
-  });
-  const combo = document.createElement('div');
-  combo.className = 'card';
-  combo.innerHTML = `
-    <b>组合效果示例</b>
-    <p class="muted">多重 + 穿透：扇形穿透弹；爆炸 + 冰霜：冰爆；攻速 + 暴击：高频暴击；爆炸达到 2 级：击杀连爆。</p>
+ const box = document.getElementById('skillList');
+ box.innerHTML = '';
+ skillBook.forEach(skill => {
+  const unlocked = save.unlocked >= skill.unlock;
+  const div = document.createElement('div');
+  div.className = 'skill-item' + (unlocked ? '' : ' lock');
+  div.style.opacity = unlocked ? '1' : '.45';
+  div.innerHTML = `
+   <div class="row">
+    <div>
+     <b>${skill.icon} ${skill.name}<span class="tag">${skill.type}</span></b>
+     <div class="small">${skill.desc}</div>
+     <div class="small">${unlocked ? '已解锁' : '第 ' + skill.unlock + ' 关后解锁'}</div>
+    </div>
+   </div>
   `;
-  box.appendChild(combo);
+  box.appendChild(div);
+ });
+ const combo = document.createElement('div');
+ combo.className = 'card';
+ combo.innerHTML = `
+  <b>组合效果示例</b>
+  <p class="muted">多重 + 穿透：扇形穿透弹；爆炸 + 冰霜：冰爆；攻速 + 暴击：高频暴击；爆炸达到 2 级：击杀连爆；多重 2 级 + 攻速：水果风暴。</p>
+ `;
+ box.appendChild(combo);
 }
 function renderMissions() {
-  const box = document.getElementById('missionList');
-  box.innerHTML = '';
-  Object.keys(save.missions.data).forEach(key => {
-    const m = save.missions.data[key];
-    const ready = m.value >= m.target && !m.claimed;
-    const div = document.createElement('div');
-    div.className = 'mission-item';
-    div.innerHTML = `
-      <div class="row">
-        <div style="flex:1">
-          <b>${m.name}</b>
-          <div class="small">进度：${m.value}/${m.target}，奖励：🍊 ${m.reward}</div>
-          <div class="bar"><div style="width:${Math.min(100,m.value/m.target*100)}%"></div></div>
-        </div>
-        <button ${ready ? '' : 'disabled'}>${m.claimed ? '已领取' : '领取'}</button>
-      </div>
-    `;
-    div.querySelector('button').onclick = () => {
-      if (!ready) return;
-      m.claimed = true;
-      save.coins += m.reward;
-      saveGame();
-      renderMissions();
-      renderHome();
-      toast('任务奖励已领取');
-    };
-    box.appendChild(div);
-  });
+ const box = document.getElementById('missionList');
+ box.innerHTML = '';
+ Object.keys(save.missions.data).forEach(key => {
+  const m = save.missions.data[key];
+  const ready = m.value >= m.target && !m.claimed;
+  const div = document.createElement('div');
+  div.className = 'mission-item';
+  div.innerHTML = `
+   <div class="row">
+    <div style="flex:1">
+     <b>${m.name}</b>
+     <div class="small">进度：${m.value}/${m.target}，奖励：🍊 ${m.reward}</div>
+     <div class="bar"><div style="width:${Math.min(100,m.value/m.target*100)}%"></div></div>
+    </div>
+    <button ${ready ? '' : 'disabled'}>${m.claimed ? '已领取' : '领取'}</button>
+   </div>
+  `;
+  div.querySelector('button').onclick = () => {
+   if (!ready) return;
+   m.claimed = true;
+   save.coins += m.reward;
+   saveGame();
+   renderMissions();
+   renderHome();
+   toast('任务奖励已领取');
+  };
+  box.appendChild(div);
+ });
 }
 
 /* ===================== Canvas 战斗 ===================== */
@@ -661,206 +699,300 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let W=420, H=760, dpr=1;
 function resize() {
-  const rect = phone.getBoundingClientRect();
-  W = rect.width; H = rect.height; dpr = window.devicePixelRatio || 1;
-  canvas.width = W * dpr; canvas.height = H * dpr;
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+ const rect = phone.getBoundingClientRect();
+ W = rect.width; H = rect.height; dpr = window.devicePixelRatio || 1;
+ canvas.width = W * dpr; canvas.height = H * dpr;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 window.addEventListener('resize', resize);
 resize();
 
 let running=false, paused=false, lastTime=0, currentStage=null;
-let player, enemies=[], bullets=[], particles=[], texts=[], g;
+let player, enemies=[], bullets=[], particles=[], texts=[], muzzleFlashes=[], g;
 let shake = 0, dangerFlash = 0, comboTimer = 0;
 
-function initBattle(stageId) {
-  const s = stages[stageId-1];
-  currentStage = s;
-  const atkLv = save.upgrades.atk;
-  const rateLv = save.upgrades.rate;
-  const hpLv = save.upgrades.hp;
+function initBattle(stageObj, mode='stage') {
+ const s = stageObj;
+ currentStage = s;
+ const atkLv = save.upgrades.atk;
+ const rateLv = save.upgrades.rate;
+ const hpLv = save.upgrades.hp;
 
-  g = {
-    hp: 9 + hpLv * 2,
-    maxHp: 9 + hpLv * 2,
-    coinInRun: 0,
-    kills: 0,
-    lv: 1,
-    exp: 0,
-    expNeed: 8,
-    time: 0,
-    spawnTimer: 0,
-    shootTimer: 0,
-    bossSpawned: false,
-    bossKilled: !s.boss,
-    bossRef: null,
-    reward: 0,
-    rewardClaimed: false,
-    reviveUsed: false,
-    doubled: false,
-    win: false,
-    combo: 0,
-    maxCombo: 0,
-    guideStep: 0,
-    warningTimer: 0,
-    skillTaken: {},
-    combos: {},
-    skills: {
-      bulletCount: 1,
-      fireRate: Math.max(170, 560 - rateLv*26),
-      bulletSpeed: 7.4,
-      damage: atkLv,
-      pierce: 0,
-      splash: 0,
-      slow: 0,
-      crit: 0,
-      chainExplosion: false,
-      fanPierce: false,
-      iceBurst: false,
-      rapidCrit: false
-    }
-  };
-  player = { x: W/2, y: H-78, r: 24 };
-  enemies = []; bullets = []; particles = []; texts = [];
-  shake = 0; dangerFlash = 0; comboTimer = 0;
-  updateHud();
-  hideBossBar();
-  showGuide('拖动底部果篮左右移动，射击会自动进行。', 2800);
+ g = {
+  mode,
+  hp: 9 + hpLv * 2,
+  maxHp: 9 + hpLv * 2,
+  coinInRun: 0,
+  kills: 0,
+  lv: 1,
+  exp: 0,
+  expNeed: 8,
+  time: 0,
+  spawnTimer: 0,
+  shootTimer: 0,
+  bossSpawned: false,
+  bossKilled: !s.boss,
+  bossRef: null,
+  tailActive: false,
+  tailStart: 0,
+  tailDone: false,
+    tailChoicePending: false,
+    tailChoiceUsed: false,
+  reward: 0,
+  rewardClaimed: false,
+  reviveUsed: false,
+  doubled: false,
+  win: false,
+  combo: 0,
+  maxCombo: 0,
+  guideStep: 0,
+  warningTimer: 0,
+  skillTaken: {},
+  combos: {},
+  skills: {
+   bulletCount: 1,
+   fireRate: Math.max(170, 560 - rateLv*26),
+   bulletSpeed: 7.4,
+   damage: atkLv,
+   pierce: 0,
+   splash: 0,
+   slow: 0,
+   crit: 0,
+   chainExplosion: false,
+   fanPierce: false,
+   iceBurst: false,
+   rapidCrit: false,
+   fruitStorm: false
+  }
+ };
+ player = { x: W/2, y: H-78, r: 24 };
+ enemies = []; bullets = []; particles = []; texts = []; muzzleFlashes = [];
+ shake = 0; dangerFlash = 0; comboTimer = 0;
+ updateHud();
+ hideBossBar();
+ showGuide('拖动底部果篮左右移动，射击会自动进行。', 2800);
 }
 
 function startStage(stageId) {
-  Object.values(screens).forEach(s=>s.classList.remove('active'));
-  battleUI.classList.add('active');
-  initBattle(stageId);
-  running = true; paused = false;
-  lastTime = performance.now();
-  requestAnimationFrame(loop);
+ Object.values(screens).forEach(s=>s.classList.remove('active'));
+ battleUI.classList.add('active');
+ initBattle(stages[stageId-1], 'stage');
+ running = true; paused = false;
+ lastTime = performance.now();
+ requestAnimationFrame(loop);
+}
+
+function startEndlessMode() {
+ Object.values(screens).forEach(s=>s.classList.remove('active'));
+ battleUI.classList.add('active');
+ initBattle(endlessStage, 'endless');
+ running = true; paused = false;
+ lastTime = performance.now();
+ showWarning('无尽模式开始！', 1200);
+ requestAnimationFrame(loop);
+}
+
+function difficultyLevel() {
+ if (!g) return 1;
+ if (g.mode === 'endless') return 1 + Math.floor(g.time / 28000);
+ return Number(currentStage.id) || 1;
 }
 
 function updateHud() {
-  document.getElementById('hudStage').textContent = currentStage.id;
-  document.getElementById('hudHp').textContent = Math.max(0, Math.ceil(g.hp));
-  document.getElementById('hudCoin').textContent = g.coinInRun;
-  document.getElementById('hudLv').textContent = g.lv;
-  document.getElementById('expFill').style.width = Math.min(100, g.exp/g.expNeed*100) + '%';
-  if (g.bossRef && g.bossRef.hp > 0) {
-    document.getElementById('bossBarWrap').style.display = 'block';
-    document.getElementById('bossFill').style.width = Math.max(0, g.bossRef.hp / g.bossRef.maxHp * 100) + '%';
-  }
+ document.getElementById('hudStage').textContent = g.mode === 'endless' ? '无尽' : currentStage.id;
+ document.getElementById('hudHp').textContent = Math.max(0, Math.ceil(g.hp));
+ document.getElementById('hudCoin').textContent = g.coinInRun;
+ document.getElementById('hudLv').textContent = g.lv;
+ document.getElementById('expFill').style.width = Math.min(100, g.exp/g.expNeed*100) + '%';
+ const weaponEl = document.getElementById('weaponLabel');
+ if (weaponEl) weaponEl.textContent = '当前武器：' + weaponName();
+ if (g.bossRef && g.bossRef.hp > 0) {
+  document.getElementById('bossBarWrap').style.display = 'block';
+  document.getElementById('bossFill').style.width = Math.max(0, g.bossRef.hp / g.bossRef.maxHp * 100) + '%';
+ }
+}
+function weaponName() {
+ const t = g.skillTaken || {};
+ if (g.combos.rapidCrit) return '高频暴击果炮';
+ if (g.combos.iceBurst) return '冰爆果汁炮';
+ if (g.combos.fanPierce) return '扇形穿透果刺';
+ if (g.combos.chainExplosion) return '连爆西瓜炮';
+ if ((t.multi || 0) >= 2) return '多重水果炮';
+ if ((t.splash || 0) >= 1) return '爆裂西瓜炮';
+ if ((t.slow || 0) >= 1) return '冰霜糖浆炮';
+ if ((t.pierce || 0) >= 1) return '穿透果刺炮';
+ if ((t.crit || 0) >= 1) return '甜蜜暴击炮';
+ return '基础果核';
+}
+function bulletVisual() {
+ if (!g || !g.skills) return {color:'#ffdc6d', trail:'#fff4b0', glow:'#fff1a8', r:5, line:3};
+ if (g.combos.rapidCrit) return {color:'#ffe071', trail:'#fff6ad', glow:'#ffec87', r:6.2, line:5};
+ if (g.combos.iceBurst || g.skills.slow) return {color:'#83e6ff', trail:'#baf4ff', glow:'#8be8ff', r:5.8, line:4};
+ if (g.skills.splash) return {color:'#ff9e4a', trail:'#ffd49c', glow:'#ffbd6a', r:6, line:4};
+ if (g.skills.pierce || g.skills.fanPierce) return {color:'#b8ff72', trail:'#e5ffb8', glow:'#a4ff72', r:5.3, line:4};
+ if (g.skills.bulletCount >= 3) return {color:'#ffdc6d', trail:'#ffffff', glow:'#fff1a8', r:5.4, line:3};
+ return {color:'#ffdc6d', trail:'#fff4b0', glow:'#fff1a8', r:5, line:3};
+}
+function pushMuzzle(angle, color) {
+ muzzleFlashes.push({
+  x: player.x,
+  y: player.y - 12,
+  angle,
+  color,
+  life: 10,
+  size: 12 + Math.random()*5
+ });
 }
 function hideBossBar() {
-  document.getElementById('bossBarWrap').style.display = 'none';
+ document.getElementById('bossBarWrap').style.display = 'none';
 }
 function showWarning(text, ms=1200) {
-  const el = document.getElementById('bigWarning');
-  el.textContent = text;
-  el.style.display = 'block';
-  g.warningTimer = ms;
+ const el = document.getElementById('bigWarning');
+ el.textContent = text;
+ el.style.display = 'block';
+ g.warningTimer = ms;
 }
 function showGuide(text, ms=2500) {
-  const el = document.getElementById('guideBubble');
-  el.textContent = text;
-  el.style.display = 'block';
-  clearTimeout(showGuide.timer);
-  showGuide.timer = setTimeout(()=>{ el.style.display='none'; }, ms);
+ const el = document.getElementById('guideBubble');
+ el.textContent = text;
+ el.style.display = 'block';
+ clearTimeout(showGuide.timer);
+ showGuide.timer = setTimeout(()=>{ el.style.display='none'; }, ms);
 }
 
 /* ===================== 敌人、射击、技能 ===================== */
 function makeEnemy(type, boss=false) {
-  if (boss) {
-    const hp = currentStage.hardBoss ? 260 : 170;
-    return {
-      type:'boss', x:W/2, y:-80, r:44, hp, maxHp:hp, speed:0.35,
-      color: currentStage.hardBoss ? '#b86cff' : '#ff6b6b',
-      boss:true, summonTimer:0, phase:1, hitFlash:0
-    };
-  }
-  const base = 2 + currentStage.id * .56 + g.time/14500;
-  let e = { type, x:24+Math.random()*(W-48), y:-25, r:15, hp:base, maxHp:base, speed:.55+currentStage.id*.045, color:'#72df86', frozen:0, hitFlash:0 };
-  if (type === 'fast') { e.r=12; e.hp=e.maxHp=Math.max(1, base*.75); e.speed*=1.9; e.color='#ffd45a'; }
-  if (type === 'tank') { e.r=22; e.hp=e.maxHp=base*3.1; e.speed*=.55; e.color='#ff8b73'; }
-  if (type === 'split') { e.r=17; e.hp=e.maxHp=base*1.45; e.speed*=.86; e.color='#66e0d0'; e.split=true; }
-  return e;
+ if (boss) {
+  const hp = currentStage.hardBoss ? 260 : 170;
+  return {
+   type:'boss', x:W/2, y:-80, r:44, hp, maxHp:hp, speed:0.35,
+   color: currentStage.hardBoss ? '#b86cff' : '#ff6b6b',
+   boss:true, summonTimer:0, phase:1, hitFlash:0
+  };
+ }
+ const diff = difficultyLevel();
+ const base = 2 + diff * .56 + g.time/14500;
+ let e = { type, x:24+Math.random()*(W-48), y:-25, r:15, hp:base, maxHp:base, speed:.55+diff*.045, color:'#72df86', frozen:0, hitFlash:0 };
+ if (type === 'fast') { e.r=12; e.hp=e.maxHp=Math.max(1, base*.75); e.speed*=1.9; e.color='#ffd45a'; }
+ if (type === 'tank') { e.r=22; e.hp=e.maxHp=base*3.1; e.speed*=.55; e.color='#ff8b73'; }
+ if (type === 'split') { e.r=17; e.hp=e.maxHp=base*1.45; e.speed*=.86; e.color='#66e0d0'; e.split=true; }
+ return e;
 }
 function spawnEnemy() {
-  const pool = currentStage.enemy;
-  const type = pool[Math.floor(Math.random()*pool.length)];
-  enemies.push(makeEnemy(type));
+ const pool = currentStage.enemy;
+ const type = pool[Math.floor(Math.random()*pool.length)];
+ enemies.push(makeEnemy(type));
 }
 function spawnBossIfNeeded() {
-  if (!currentStage.boss || g.bossSpawned) return;
-  const condition = g.kills >= Math.floor(currentStage.target*.55) || g.time > 33000;
-  if (condition) {
-    g.bossSpawned = true;
-    const boss = makeEnemy('boss', true);
-    g.bossRef = boss;
-    enemies.push(boss);
-    document.getElementById('bossName').textContent = currentStage.hardBoss ? '坏果核心' : '腐烂西瓜王';
-    document.getElementById('bossBarWrap').style.display = 'block';
-    showWarning('Boss 出现！', 1500);
-    shake = 14;
-  }
+ if (g.mode === 'endless' || !currentStage.boss || g.bossSpawned) return;
+ const condition = g.kills >= Math.floor(currentStage.target*.55) || g.time > 33000;
+ if (condition) {
+  g.bossSpawned = true;
+  const boss = makeEnemy('boss', true);
+  g.bossRef = boss;
+  enemies.push(boss);
+  document.getElementById('bossName').textContent = currentStage.hardBoss ? '坏果核心' : '腐烂西瓜王';
+  document.getElementById('bossBarWrap').style.display = 'block';
+  showWarning('Boss 出现！', 1500);
+  shake = 14;
+ }
 }
 function findTarget() {
-  if (!enemies.length) return null;
-  let best = enemies[0], bd = Infinity;
-  enemies.forEach(e => {
-    const d = Math.hypot(e.x-player.x, e.y-player.y);
-    if (d < bd) { bd = d; best = e; }
-  });
-  return best;
+ if (!enemies.length) return null;
+ let best = enemies[0], bd = Infinity;
+ enemies.forEach(e => {
+  const d = Math.hypot(e.x-player.x, e.y-player.y);
+  if (d < bd) { bd = d; best = e; }
+ });
+ return best;
 }
 function shoot() {
-  const t = findTarget();
-  if (!t) return;
-  const baseAngle = Math.atan2(t.y - (player.y-6), t.x - player.x);
-  const count = g.skills.bulletCount;
-  for (let i=0; i<count; i++) {
-    const offset = (i - (count-1)/2) * (g.skills.fanPierce ? 0.22 : 0.16);
-    const a = baseAngle + offset;
-    bullets.push({
-      x:player.x, y:player.y-12,
-      vx:Math.cos(a)*g.skills.bulletSpeed,
-      vy:Math.sin(a)*g.skills.bulletSpeed,
-      r:5, dmg:g.skills.damage,
-      pierce:g.skills.pierce + (g.skills.fanPierce ? 1 : 0),
-      life:98
-    });
-  }
+ const t = findTarget();
+ if (!t) return;
+ const baseAngle = Math.atan2(t.y - (player.y-6), t.x - player.x);
+ const count = g.skills.bulletCount;
+ const visual = bulletVisual();
+
+ for (let i=0; i<count; i++) {
+  const offset = (i - (count-1)/2) * (g.skills.fanPierce ? 0.22 : 0.16);
+  const a = baseAngle + offset;
+  pushMuzzle(a, visual.glow);
+
+  bullets.push({
+   x:player.x, y:player.y-12,
+   px:player.x, py:player.y-12,
+   vx:Math.cos(a)*g.skills.bulletSpeed,
+   vy:Math.sin(a)*g.skills.bulletSpeed,
+   r:visual.r,
+   color:visual.color,
+   trail:visual.trail,
+   glow:visual.glow,
+   line:visual.line,
+   wobble: (g.skills.slow || g.combos.iceBurst) ? Math.random()*Math.PI*2 : 0,
+   dmg:g.skills.damage,
+   pierce:g.skills.pierce + (g.skills.fanPierce ? 1 : 0),
+   life:98
+  });
+ }
 }
 function damageEnemy(e, amount) {
-  let dmg = amount;
-  if (g.skills.crit && Math.random() < g.skills.crit) {
-    dmg *= g.skills.rapidCrit ? 2.6 : 2.2;
-    addText(e.x, e.y-18, '暴击!', '#ffec87', 18);
+ let dmg = amount;
+ const isCrit = g.skills.crit && Math.random() < g.skills.crit;
+ if (isCrit) {
+  dmg *= g.skills.rapidCrit ? 2.6 : 2.2;
+  addText(e.x, e.y-18, '暴击!', '#ffec87', 18);
+  particles.push({x:e.x,y:e.y,vx:0,vy:0,life:12,r:e.r+18,color:'#ffe071',ring:true,lineWidth:4});
+  for (let i=0; i<8; i++) {
+   particles.push({x:e.x,y:e.y,vx:(Math.random()-.5)*5,vy:(Math.random()-.5)*5,life:16,r:2+Math.random()*2,color:'#ffec87'});
   }
-  e.hp -= dmg;
-  e.hitFlash = 5;
-  if (g.skills.slow) e.frozen = Math.max(e.frozen || 0, 55*g.skills.slow);
-  hitParticles(e.x, e.y, e.color);
-  addText(e.x, e.y, '-' + Math.ceil(dmg), '#ffffff', 14);
+ }
 
-  if (g.skills.splash > 0) {
-    explodeAt(e.x, e.y, 34 + g.skills.splash*16, dmg * (0.32 + g.skills.splash*.08), '#ffcf5a');
+ e.hp -= dmg;
+ e.hitFlash = isCrit ? 8 : 5;
+
+ if (g.skills.slow) {
+  e.frozen = Math.max(e.frozen || 0, 55*g.skills.slow);
+  particles.push({x:e.x,y:e.y,vx:0,vy:0,life:12,r:e.r+8,color:'#8be8ff',ring:true,lineWidth:2});
+  if (Math.random() < .55) {
+   particles.push({x:e.x,y:e.y,vx:(Math.random()-.5)*2.2,vy:-1-Math.random()*2,life:18,r:2,color:'#c9f7ff',ice:true});
   }
+ }
+
+ hitParticles(e.x, e.y, e.color, isCrit ? 8 : 5);
+ addText(e.x, e.y, '-' + Math.ceil(dmg), isCrit ? '#ffec87' : '#ffffff', isCrit ? 16 : 14);
+
+ if (g.skills.splash > 0) {
+  explodeAt(e.x, e.y, 34 + g.skills.splash*16, dmg * (0.32 + g.skills.splash*.08), '#ffcf5a');
+ }
 }
 function explodeAt(x, y, radius, damage, color) {
-  particles.push({x,y,vx:0,vy:0,life:14,r:radius,color,ring:true});
-  enemies.forEach(other => {
-    if (Math.hypot(other.x-x, other.y-y) < radius) {
-      other.hp -= damage;
-      other.hitFlash = 4;
-      if (g.skills.iceBurst && other.frozen > 0) other.hp -= damage * .75;
-    }
-  });
+ particles.push({x,y,vx:0,vy:0,life:16,r:radius,color,ring:true,lineWidth:4});
+ particles.push({x,y,vx:0,vy:0,life:10,r:radius*.55,color:'#fff1a8',ring:true,lineWidth:2});
+ for (let i=0; i<10; i++) {
+  const a = Math.random()*Math.PI*2;
+  const sp = 1.2 + Math.random()*3.2;
+  particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:18,r:2+Math.random()*2.2,color: i%2 ? '#ffcf5a' : '#ff8f45'});
+ }
+
+ enemies.forEach(other => {
+  if (Math.hypot(other.x-x, other.y-y) < radius) {
+   other.hp -= damage;
+   other.hitFlash = 4;
+   if (g.skills.iceBurst && other.frozen > 0) {
+    other.hp -= damage * .75;
+    particles.push({x:other.x,y:other.y,vx:0,vy:0,life:14,r:other.r+18,color:'#8be8ff',ring:true,lineWidth:3});
+    addText(other.x, other.y-22, '冰爆', '#8be8ff', 15);
+   }
+  }
+ });
 }
 function hitParticles(x,y,color='#fff1a8',n=5) {
-  for (let i=0;i<n;i++) particles.push({
-    x, y, vx:(Math.random()-.5)*3.2, vy:(Math.random()-.5)*3.2, life:22, r:2+Math.random()*2, color
-  });
+ for (let i=0;i<n;i++) particles.push({
+  x, y, vx:(Math.random()-.5)*3.2, vy:(Math.random()-.5)*3.2, life:22, r:2+Math.random()*2, color
+ });
 }
 function addText(x,y,text,color='#fff',size=13) {
-  texts.push({x,y,text,color,size,life:42,vy:-0.75});
+ texts.push({x,y,text,color,size,life:42,vy:-0.75});
 }
 function gainExp(n) {
   g.exp += n;
@@ -869,360 +1001,518 @@ function gainExp(n) {
     g.exp = 0;
     g.expNeed = Math.floor(g.expNeed*1.35 + 4);
     g.lv++;
-    if (g.lv === 2) showGuide('升级了！选择一个强化，火力会立刻变强。', 2200);
-    showSkillChoice();
+    if (g.tailActive) {
+      // 尾部清怪阶段不再弹三选一，避免打断已经成型的爽感。
+      addText(player.x, player.y - 58, '尾部清怪中', '#ffec87', 15);
+    } else {
+      if (g.lv === 2) showGuide('升级了！选择一个强化，火力会立刻变强。', 2200);
+      showSkillChoice();
+    }
   }
   updateHud();
 }
 function availableSkills() {
-  return skillPool.filter(s => save.unlocked >= s.unlock);
+ return skillPool.filter(s => g.mode === 'endless' || save.unlocked >= s.unlock);
 }
 const skillPool = [
-  {id:'multi', unlock:1, name:'🍇 多重水果', type:'弹幕流', desc:'子弹数量 +1，火力覆盖更密。', apply:()=>g.skills.bulletCount++},
-  {id:'rate', unlock:1, name:'⚡ 急速装填', type:'攻速流', desc:'射击间隔缩短 18%。', apply:()=>g.skills.fireRate=Math.max(130,g.skills.fireRate*.82)},
-  {id:'pierce', unlock:2, name:'🍍 穿透果刺', type:'穿透流', desc:'子弹额外穿透 1 个敌人。', apply:()=>g.skills.pierce++},
-  {id:'splash', unlock:3, name:'🍉 爆裂果汁', type:'爆炸流', desc:'命中后产生范围溅射。', apply:()=>g.skills.splash++},
-  {id:'slow', unlock:4, name:'🫐 冰霜糖浆', type:'控制流', desc:'命中后减速敌人。', apply:()=>g.skills.slow=Math.min(3,g.skills.slow+1)},
-  {id:'crit', unlock:5, name:'🎯 甜蜜暴击', type:'暴击流', desc:'获得 12% 暴击概率。', apply:()=>g.skills.crit=Math.min(.48,g.skills.crit+.12)},
-  {id:'repair', unlock:1, name:'🛡️ 果皮修补', type:'生存流', desc:'立即恢复 4 点防线生命。', apply:()=>g.hp=Math.min(g.maxHp,g.hp+4)}
+ {id:'multi', unlock:1, name:'🍇 多重水果', type:'弹幕流', desc:'子弹数量 +1，火力覆盖更密。', apply:()=>g.skills.bulletCount++},
+ {id:'rate', unlock:1, name:'⚡ 急速装填', type:'攻速流', desc:'射击间隔缩短 18%。', apply:()=>g.skills.fireRate=Math.max(130,g.skills.fireRate*.82)},
+ {id:'pierce', unlock:2, name:'🍍 穿透果刺', type:'穿透流', desc:'子弹额外穿透 1 个敌人。', apply:()=>g.skills.pierce++},
+ {id:'splash', unlock:3, name:'🍉 爆裂果汁', type:'爆炸流', desc:'命中后产生范围溅射。', apply:()=>g.skills.splash++},
+ {id:'slow', unlock:4, name:'🫐 冰霜糖浆', type:'控制流', desc:'命中后减速敌人。', apply:()=>g.skills.slow=Math.min(3,g.skills.slow+1)},
+ {id:'crit', unlock:5, name:'🎯 甜蜜暴击', type:'暴击流', desc:'获得 12% 暴击概率。', apply:()=>g.skills.crit=Math.min(.48,g.skills.crit+.12)},
+ {id:'repair', unlock:1, name:'🛡️ 果皮修补', type:'生存流', desc:'立即恢复 4 点防线生命。', apply:()=>g.hp=Math.min(g.maxHp,g.hp+4)}
 ];
 function checkCombos() {
-  const t = g.skillTaken;
-  if (t.multi && t.pierce && !g.combos.fanPierce) {
-    g.combos.fanPierce = true; g.skills.fanPierce = true;
-    showWarning('组合：扇形穿透弹！', 1400);
-  }
-  if (t.splash && t.slow && !g.combos.iceBurst) {
-    g.combos.iceBurst = true; g.skills.iceBurst = true;
-    showWarning('组合：冰爆果汁！', 1400);
-  }
-  if (t.rate && t.crit && !g.combos.rapidCrit) {
-    g.combos.rapidCrit = true; g.skills.rapidCrit = true;
-    g.skills.fireRate = Math.max(115, g.skills.fireRate * .9);
-    showWarning('组合：高频暴击！', 1400);
-  }
-  if ((t.splash || 0) >= 2 && !g.combos.chainExplosion) {
-    g.combos.chainExplosion = true; g.skills.chainExplosion = true;
-    showWarning('组合：击杀连爆！', 1400);
-  }
+ const t = g.skillTaken;
+ if (t.multi && t.pierce && !g.combos.fanPierce) {
+  g.combos.fanPierce = true; g.skills.fanPierce = true;
+  showWarning('组合：扇形穿透弹！', 1400);
+ }
+ if (t.splash && t.slow && !g.combos.iceBurst) {
+  g.combos.iceBurst = true; g.skills.iceBurst = true;
+  showWarning('组合：冰爆果汁！', 1400);
+ }
+ if (t.rate && t.crit && !g.combos.rapidCrit) {
+  g.combos.rapidCrit = true; g.skills.rapidCrit = true;
+  g.skills.fireRate = Math.max(115, g.skills.fireRate * .9);
+  showWarning('组合：高频暴击！', 1400);
+ }
+ if ((t.splash || 0) >= 2 && !g.combos.chainExplosion) {
+  g.combos.chainExplosion = true; g.skills.chainExplosion = true;
+  showWarning('组合：击杀连爆！', 1400);
+ }
+ if ((t.multi || 0) >= 2 && t.rate && !g.combos.fruitStorm) {
+  g.combos.fruitStorm = true; g.skills.fruitStorm = true;
+  showWarning('组合：水果风暴！', 1400);
+ }
 }
-function showSkillChoice() {
-  paused = true;
-  upgradeModal.classList.add('active');
-  const box = document.getElementById('choices');
-  box.innerHTML = '';
-  const pool = [...availableSkills()].sort(()=>Math.random()-.5).slice(0,3);
-  pool.forEach(skill => {
-    const div = document.createElement('div');
-    div.className = 'choice';
-    div.innerHTML = `<b>${skill.name}<span class="tag">${skill.type}</span></b><span>${skill.desc}</span>`;
-    div.onclick = () => {
-      skill.apply();
-      g.skillTaken[skill.id] = (g.skillTaken[skill.id] || 0) + 1;
-      checkCombos();
-      upgradeModal.classList.remove('active');
-      paused = false;
-      lastTime = performance.now();
-      updateHud();
-      requestAnimationFrame(loop);
-    };
-    box.appendChild(div);
-  });
+function showSkillChoice(afterChoose) {
+ paused = true;
+ upgradeModal.classList.add('active');
+ const box = document.getElementById('choices');
+ box.innerHTML = '';
+ const pool = [...availableSkills()].sort(()=>Math.random()-.5).slice(0,3);
+ pool.forEach(skill => {
+  const div = document.createElement('div');
+  div.className = 'choice';
+  div.innerHTML = `<b>${skill.name}<span class="tag">${skill.type}</span></b><span>${skill.desc}</span>`;
+  div.onclick = () => {
+   skill.apply();
+   g.skillTaken[skill.id] = (g.skillTaken[skill.id] || 0) + 1;
+   checkCombos();
+   upgradeModal.classList.remove('active');
+   paused = false;
+   lastTime = performance.now();
+   updateHud();
+   requestAnimationFrame(loop);
+  };
+  box.appendChild(div);
+ });
 }
 
 /* ===================== 战斗更新 ===================== */
 function update(dt) {
-  g.time += dt;
-  g.spawnTimer += dt;
-  g.shootTimer += dt;
-  if (g.warningTimer > 0) {
-    g.warningTimer -= dt;
-    if (g.warningTimer <= 0) document.getElementById('bigWarning').style.display = 'none';
-  }
-  spawnBossIfNeeded();
+ g.time += dt;
+ g.spawnTimer += dt;
+ g.shootTimer += dt;
+ if (g.warningTimer > 0) {
+  g.warningTimer -= dt;
+  if (g.warningTimer <= 0) document.getElementById('bigWarning').style.display = 'none';
+ }
+ spawnBossIfNeeded();
 
-  if (currentStage.id === 1 && g.guideStep === 0 && g.time > 7500) {
-    g.guideStep = 1; showGuide('怪物快靠近防线时会变危险，要用火力压回去。', 2500);
-  }
+ if (g.mode === 'stage' && currentStage.id === 1 && g.guideStep === 0 && g.time > 7500) {
+  g.guideStep = 1; showGuide('怪物快靠近防线时会变危险，要用火力压回去。', 2500);
+ }
 
-  const spawnEvery = Math.max(250, 900 - currentStage.id*45 - g.time/180);
-  if (g.spawnTimer >= spawnEvery) {
-    g.spawnTimer = 0;
-    const n = currentStage.id >= 6 && Math.random() < .22 ? 2 : 1;
-    for(let i=0;i<n;i++) spawnEnemy();
-  }
-  if (g.shootTimer >= g.skills.fireRate) {
-    g.shootTimer = 0;
-    shoot();
-  }
+ const diff = difficultyLevel();
+ const spawnEvery = g.mode === 'endless'
+  ? Math.max(150, 880 - diff*52 - g.time/260)
+  : Math.max(250, 900 - diff*45 - g.time/180);
+ if (g.spawnTimer >= spawnEvery) {
+  g.spawnTimer = 0;
+  const n = (g.mode === 'endless' ? (diff >= 3 && Math.random() < .35) : (currentStage.id >= 6 && Math.random() < .22)) ? 2 : 1;
+  for(let i=0;i<n;i++) spawnEnemy();
+ }
+ if (g.shootTimer >= g.skills.fireRate) {
+  g.shootTimer = 0;
+  shoot();
+ }
 
-  enemies.forEach(e => {
-    if (e.frozen > 0) e.frozen -= dt/16.67;
-    if (e.hitFlash > 0) e.hitFlash -= dt/16.67;
-    const slowFactor = e.frozen > 0 ? .48 : 1;
-    e.y += e.speed * slowFactor * dt/16.67;
-    if (e.y > H - 145) dangerFlash = Math.max(dangerFlash, 8);
-    if (e.boss) {
-      e.summonTimer += dt;
-      if (e.summonTimer > 2600) {
-        e.summonTimer = 0;
-        enemies.push(makeEnemy(Math.random()<.55?'normal':'fast'));
-        showWarning('Boss 召唤小怪！', 900);
-      }
-      if (e.hp < e.maxHp*.5 && e.phase === 1) {
-        e.phase = 2; e.speed *= 1.45; showWarning('Boss 狂暴了！', 1300); shake = 12;
-      }
+ enemies.forEach(e => {
+  if (e.frozen > 0) e.frozen -= dt/16.67;
+  if (e.hitFlash > 0) e.hitFlash -= dt/16.67;
+  const slowFactor = e.frozen > 0 ? .48 : 1;
+  e.y += e.speed * slowFactor * dt/16.67;
+  if (e.y > H - 145) dangerFlash = Math.max(dangerFlash, 8);
+  if (e.boss) {
+   e.summonTimer += dt;
+   if (e.summonTimer > 2600) {
+    e.summonTimer = 0;
+    enemies.push(makeEnemy(Math.random()<.55?'normal':'fast'));
+    showWarning('Boss 召唤小怪！', 900);
+   }
+   if (e.hp < e.maxHp*.5 && e.phase === 1) {
+    e.phase = 2; e.speed *= 1.45; showWarning('Boss 狂暴了！', 1300); shake = 12;
+   }
+  }
+ });
+
+ bullets.forEach(b => {
+  b.px = b.x; b.py = b.y;
+  if (b.wobble) {
+   const t = (98 - b.life) * 0.22 + b.wobble;
+   b.x += Math.sin(t) * 0.35;
+  }
+  b.x+=b.vx; b.y+=b.vy; b.life--;
+ });
+ bullets.forEach(b => {
+  for (const e of enemies) {
+   if (b.life <= 0) break;
+   if (Math.hypot(b.x-e.x, b.y-e.y) < b.r + e.r) {
+    damageEnemy(e,b.dmg);
+    if (b.pierce > 0) b.pierce--; else b.life = 0;
+   }
+  }
+ });
+
+ particles.forEach(p => {
+  if (!p.ring) { p.x+=p.vx; p.y+=p.vy; }
+  p.life--;
+ });
+ muzzleFlashes.forEach(m => m.life--);
+ texts.forEach(t => { t.y += t.vy; t.life--; });
+
+ const newborn = [];
+ enemies = enemies.filter(e => {
+  if (e.hp <= 0) {
+   if (e.split) {
+    for(let i=0;i<2;i++) {
+     const child = makeEnemy('fast');
+     child.x = e.x + (i?12:-12); child.y = e.y; child.r = 10; child.hp = child.maxHp = Math.max(1, e.maxHp*.32);
+     newborn.push(child);
     }
-  });
+   }
+   if (g.skills.chainExplosion) explodeAt(e.x, e.y, 42, g.skills.damage*.6, '#ffb84a');
+   if (e.boss) { g.bossKilled = true; hideBossBar(); }
+   g.kills++;
+   g.combo++;
+   g.maxCombo = Math.max(g.maxCombo, g.combo);
+   comboTimer = 1500;
+   if (g.combo % 10 === 0) addText(player.x, player.y-58, g.combo + ' 连杀!', '#ffec87', 18);
+   save.bestKills = Math.max(save.bestKills, g.kills);
+   gainExp(e.boss ? 18 : 2);
+   shake = Math.max(shake, e.boss ? 16 : 3);
+   return false;
+  }
+  if (e.y > H-45) {
+   g.hp -= e.boss ? 4 : 1;
+   g.combo = 0;
+   dangerFlash = 14;
+   shake = 10;
+   updateHud();
+   return false;
+  }
+  return true;
+ });
+ enemies.push(...newborn);
 
-  bullets.forEach(b => { b.x+=b.vx; b.y+=b.vy; b.life--; });
-  bullets.forEach(b => {
-    for (const e of enemies) {
-      if (b.life <= 0) break;
-      if (Math.hypot(b.x-e.x, b.y-e.y) < b.r + e.r) {
-        damageEnemy(e,b.dmg);
-        if (b.pierce > 0) b.pierce--; else b.life = 0;
-      }
-    }
-  });
+ if (comboTimer > 0) {
+  comboTimer -= dt;
+  if (comboTimer <= 0) g.combo = 0;
+ }
+ if (dangerFlash > 0) dangerFlash -= dt/16.67;
+ if (shake > 0) shake -= dt/16.67;
 
-  particles.forEach(p => {
-    if (!p.ring) { p.x+=p.vx; p.y+=p.vy; }
-    p.life--;
-  });
-  texts.forEach(t => { t.y += t.vy; t.life--; });
+ bullets = bullets.filter(b => b.life>0 && b.x>-30 && b.x<W+30 && b.y>-30 && b.y<H+30);
+ particles = particles.filter(p => p.life>0);
+ muzzleFlashes = muzzleFlashes.filter(m => m.life>0);
+ texts = texts.filter(t => t.life>0);
 
-  const newborn = [];
-  enemies = enemies.filter(e => {
-    if (e.hp <= 0) {
-      if (e.split) {
-        for(let i=0;i<2;i++) {
-          const child = makeEnemy('fast');
-          child.x = e.x + (i?12:-12); child.y = e.y; child.r = 10; child.hp = child.maxHp = Math.max(1, e.maxHp*.32);
-          newborn.push(child);
-        }
-      }
-      if (g.skills.chainExplosion) explodeAt(e.x, e.y, 42, g.skills.damage*.6, '#ffb84a');
-      if (e.boss) { g.bossKilled = true; hideBossBar(); }
-      g.kills++;
-      g.combo++;
-      g.maxCombo = Math.max(g.maxCombo, g.combo);
-      comboTimer = 1500;
-      if (g.combo % 10 === 0) addText(player.x, player.y-58, g.combo + ' 连杀!', '#ffec87', 18);
-      save.bestKills = Math.max(save.bestKills, g.kills);
-      gainExp(e.boss ? 18 : 2);
-      shake = Math.max(shake, e.boss ? 16 : 3);
-      return false;
-    }
-    if (e.y > H-45) {
-      g.hp -= e.boss ? 4 : 1;
-      g.combo = 0;
-      dangerFlash = 14;
+ if (g.hp <= 0) endBattle(false);
+
+ if (g.mode === 'stage' && !currentStage.boss && g.kills >= currentStage.target && !g.tailActive && !g.tailDone) {
+  enterTailPhase();
+ }
+ if (g.mode === 'stage' && currentStage.boss && g.bossSpawned && g.bossKilled && !g.tailActive && !g.tailDone) {
+  enterTailPhase();
+ }
+ if (g.mode === 'stage' && g.tailActive && tailTimeLeft() <= 0) {
+  g.tailDone = true;
+  endBattle(true);
+ }
+ updateHud();
+}
+
+
+function enterTailPhase() {
+  if (g.tailActive || g.tailDone || g.mode !== 'stage') return;
+
+  if (!g.tailChoiceUsed) {
+    g.tailChoiceUsed = true;
+    showWarning('目标完成！选择尾部强化', 1500);
+    showSkillChoice(() => {
+      g.tailActive = true;
+      g.tailStart = g.time;
+      showWarning('进入尾部清怪', 1500);
+      showGuide('继续用已获得的技能清怪；尾部阶段不再弹技能，稍后结算。', 2600);
       shake = 10;
-      updateHud();
-      return false;
-    }
-    return true;
-  });
-  enemies.push(...newborn);
-
-  if (comboTimer > 0) {
-    comboTimer -= dt;
-    if (comboTimer <= 0) g.combo = 0;
+    });
+    return;
   }
-  if (dangerFlash > 0) dangerFlash -= dt/16.67;
-  if (shake > 0) shake -= dt/16.67;
 
-  bullets = bullets.filter(b => b.life>0 && b.x>-30 && b.x<W+30 && b.y>-30 && b.y<H+30);
-  particles = particles.filter(p => p.life>0);
-  texts = texts.filter(t => t.life>0);
-
-  if (g.hp <= 0) endBattle(false);
-  if (!currentStage.boss && g.kills >= currentStage.target) endBattle(true);
-  if (currentStage.boss && g.bossSpawned && g.bossKilled) endBattle(true);
-  updateHud();
+  g.tailActive = true;
+  g.tailStart = g.time;
+  showWarning('进入尾部清怪', 1500);
+  showGuide('继续用已获得的技能清怪；尾部阶段不再弹技能，稍后结算。', 2600);
+  shake = 10;
+}
+function tailTimeLeft() {
+ if (!g.tailActive || g.mode !== 'stage') return 0;
+ return Math.max(0, (currentStage.tailTime || 18000) - (g.time - g.tailStart));
 }
 
 function calcReward(win) {
-  const incomeLv = save.upgrades.income;
-  const base = win ? currentStage.reward : Math.floor(currentStage.reward * .28);
-  const killBonus = Math.floor(g.kills * (win ? .55 : .25));
-  const first = win && !save.firstClear[currentStage.id] ? 60 : 0;
-  const incomeBonus = Math.floor((base + killBonus + first) * (incomeLv-1) * .08);
-  return Math.max(8, base + killBonus + first + incomeBonus + g.coinInRun);
+ const incomeLv = save.upgrades.income;
+ if (g.mode === 'endless') {
+  const survival = Math.floor(g.time/1000);
+  const baseEndless = Math.floor(g.kills * .85 + survival * 1.1 + g.coinInRun);
+  return Math.max(10, Math.floor(baseEndless * (1 + (incomeLv-1)*.08)));
+ }
+ const base = win ? currentStage.reward : Math.floor(currentStage.reward * .28);
+ const killBonus = Math.floor(g.kills * (win ? .55 : .25));
+ const first = win && !save.firstClear[currentStage.id] ? 60 : 0;
+ const incomeBonus = Math.floor((base + killBonus + first) * (incomeLv-1) * .08);
+ return Math.max(8, base + killBonus + first + incomeBonus + g.coinInRun);
 }
 function endBattle(win) {
-  if (!running) return;
-  running = false; paused = true;
-  g.reward = calcReward(win);
-  g.win = win;
-  addMissionProgress('kills', g.kills);
-  if (win) addMissionProgress('clear', 1);
-  if (currentStage.boss) addMissionProgress('boss', 1);
-  document.getElementById('resultTitle').textContent = win ? '通关成功！' : '防线被突破';
-  document.getElementById('resultText').textContent = win
-    ? `你守住了「${currentStage.name}」。回基地升级后，可以继续挑战下一关。`
-    : `你差一点守住「${currentStage.name}」。失败也会给金币，可以升级后再来。`;
-  document.getElementById('resultReward').textContent = g.reward;
-  document.getElementById('resultKills').textContent = g.kills;
-  document.getElementById('resultLevel').textContent = g.lv;
-  document.getElementById('resultCombo').textContent = g.maxCombo;
-  document.getElementById('doubleReward').style.display = 'block';
-  document.getElementById('reviveBtn').style.display = (!win && !g.reviveUsed) ? 'block' : 'none';
-  resultModal.classList.add('active');
+ if (!running) return;
+ running = false; paused = true;
+ g.reward = calcReward(win);
+ g.win = win;
+ addMissionProgress('kills', g.kills);
+ if (g.mode === 'stage' && win) addMissionProgress('clear', 1);
+ if (g.mode === 'stage' && currentStage.boss) addMissionProgress('boss', 1);
+ if (g.mode === 'endless') {
+  const sec = Math.floor(g.time/1000);
+  save.endlessBestKills = Math.max(save.endlessBestKills || 0, g.kills);
+  save.endlessBestTime = Math.max(save.endlessBestTime || 0, sec);
+ }
+ document.getElementById('resultTitle').textContent = g.mode === 'endless' ? '无尽挑战结束' : (win ? '通关成功！' : '防线被突破');
+ document.getElementById('resultText').textContent = g.mode === 'endless'
+  ? `你在无尽模式中击败 ${g.kills} 个怪物，生存 ${Math.floor(g.time/1000)} 秒。`
+  : (win
+   ? `你守住了「${currentStage.name}」。本局在目标完成后追加了尾部清怪时间。`
+   : `你差一点守住「${currentStage.name}」。失败也会给金币，可以升级后再来。`);
+ document.getElementById('resultReward').textContent = g.reward;
+ document.getElementById('resultKills').textContent = g.kills;
+ document.getElementById('resultTime').textContent = Math.floor(g.time/1000);
+ document.getElementById('resultLevel').textContent = g.lv;
+ document.getElementById('resultCombo').textContent = g.maxCombo;
+ document.getElementById('doubleReward').style.display = 'block';
+ document.getElementById('reviveBtn').style.display = (!win && !g.reviveUsed) ? 'block' : 'none';
+ resultModal.classList.add('active');
 }
 function claimReward() {
-  if (g.rewardClaimed) return;
-  g.rewardClaimed = true;
-  save.coins += g.reward;
-  if (g.win) {
-    save.firstClear[currentStage.id] = true;
-    if (save.unlocked === currentStage.id && save.unlocked < stages.length) save.unlocked++;
-  }
-  saveGame();
-  resultModal.classList.remove('active');
-  battleUI.classList.remove('active');
-  running=false; paused=false;
-  renderHome();
-  showScreen('home');
-  toast('奖励已领取');
+ if (g.rewardClaimed) return;
+ g.rewardClaimed = true;
+ save.coins += g.reward;
+ if (g.mode === 'stage' && g.win) {
+  save.firstClear[currentStage.id] = true;
+  if (save.unlocked === currentStage.id && save.unlocked < stages.length) save.unlocked++;
+ }
+ saveGame();
+ resultModal.classList.remove('active');
+ battleUI.classList.remove('active');
+ running=false; paused=false;
+ renderHome();
+ showScreen('home');
+ toast('奖励已领取');
 }
 
 /* ===================== 绘制 ===================== */
 function draw() {
-  const sx = shake > 0 ? (Math.random()-.5)*shake : 0;
-  const sy = shake > 0 ? (Math.random()-.5)*shake : 0;
-  ctx.save();
-  ctx.clearRect(0,0,W,H);
-  ctx.translate(sx, sy);
-  drawBackground();
+ const sx = shake > 0 ? (Math.random()-.5)*shake : 0;
+ const sy = shake > 0 ? (Math.random()-.5)*shake : 0;
+ ctx.save();
+ ctx.clearRect(0,0,W,H);
+ ctx.translate(sx, sy);
+ drawBackground();
 
-  enemies.forEach(drawEnemy);
-  bullets.forEach(b => {
-    ctx.fillStyle = '#ffdc6d';
-    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,.35)';
-    ctx.beginPath(); ctx.arc(b.x-1,b.y-1,2,0,Math.PI*2); ctx.fill();
-  });
-  particles.forEach(p => {
-    ctx.globalAlpha = Math.max(0,p.life/22);
-    if (p.ring) {
-      ctx.strokeStyle = p.color;
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(1-p.life/14*.25),0,Math.PI*2); ctx.stroke();
-    } else {
-      ctx.fillStyle = p.color;
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-  });
-  drawPlayer();
-  drawGoal();
-  texts.forEach(drawText);
-  if (dangerFlash > 0) drawDanger();
-  ctx.restore();
+ enemies.forEach(drawEnemy);
+ muzzleFlashes.forEach(drawMuzzle);
+ bullets.forEach(drawBullet);
+ particles.forEach(drawParticle);
+ drawPlayer();
+ drawGoal();
+ texts.forEach(drawText);
+ if (dangerFlash > 0) drawDanger();
+ ctx.restore();
 }
 function drawBackground() {
-  const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,'#172b4f');
-  grad.addColorStop(.55,'#101c34');
-  grad.addColorStop(1,'#07101d');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0,0,W,H);
-  ctx.fillStyle = 'rgba(255,255,255,.045)';
-  for(let x=W/4; x<W; x+=W/4) ctx.fillRect(x,0,1,H);
-  for(let y=120; y<H; y+=90) ctx.fillRect(0,y,W,1);
-  ctx.fillStyle = 'rgba(255,85,85,.16)';
-  ctx.fillRect(0,H-46,W,4);
+ const grad = ctx.createLinearGradient(0,0,0,H);
+ grad.addColorStop(0,'#172b4f');
+ grad.addColorStop(.55,'#101c34');
+ grad.addColorStop(1,'#07101d');
+ ctx.fillStyle = grad;
+ ctx.fillRect(0,0,W,H);
+ ctx.fillStyle = 'rgba(255,255,255,.045)';
+ for(let x=W/4; x<W; x+=W/4) ctx.fillRect(x,0,1,H);
+ for(let y=120; y<H; y+=90) ctx.fillRect(0,y,W,1);
+ ctx.fillStyle = 'rgba(255,85,85,.16)';
+ ctx.fillRect(0,H-46,W,4);
+}
+function drawMuzzle(m) {
+ ctx.save();
+ ctx.globalAlpha = Math.max(0, m.life/10);
+ ctx.translate(m.x, m.y);
+ ctx.rotate(m.angle);
+ const grad = ctx.createRadialGradient(0,0,0,0,0,m.size);
+ grad.addColorStop(0, '#ffffff');
+ grad.addColorStop(.45, m.color);
+ grad.addColorStop(1, 'rgba(255,255,255,0)');
+ ctx.fillStyle = grad;
+ ctx.beginPath();
+ ctx.moveTo(0, -m.size*.35);
+ ctx.lineTo(m.size*1.25, 0);
+ ctx.lineTo(0, m.size*.35);
+ ctx.closePath();
+ ctx.fill();
+ ctx.restore();
+}
+function drawBullet(b) {
+ ctx.save();
+ ctx.globalAlpha = .58;
+ ctx.strokeStyle = b.trail || '#fff4b0';
+ ctx.lineWidth = b.line || 3;
+ ctx.lineCap = 'round';
+ ctx.beginPath();
+ ctx.moveTo(b.px || b.x, b.py || b.y);
+ ctx.lineTo(b.x, b.y);
+ ctx.stroke();
+
+ ctx.globalAlpha = .22;
+ ctx.strokeStyle = b.glow || b.trail || '#fff4b0';
+ ctx.lineWidth = (b.line || 3) + 5;
+ ctx.beginPath();
+ ctx.moveTo(b.px || b.x, b.py || b.y);
+ ctx.lineTo(b.x, b.y);
+ ctx.stroke();
+
+ ctx.globalAlpha = 1;
+ ctx.fillStyle = b.color || '#ffdc6d';
+ ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
+ ctx.fillStyle = 'rgba(255,255,255,.55)';
+ ctx.beginPath(); ctx.arc(b.x-1,b.y-1,Math.max(1.8,b.r*.35),0,Math.PI*2); ctx.fill();
+ ctx.restore();
+}
+function drawParticle(p) {
+ ctx.save();
+ ctx.globalAlpha = Math.max(0,p.life/24);
+ if (p.ring) {
+  ctx.strokeStyle = p.color;
+  ctx.lineWidth = p.lineWidth || 3;
+  ctx.beginPath();
+  ctx.arc(p.x,p.y,p.r*(1-p.life/18*.18),0,Math.PI*2);
+  ctx.stroke();
+ } else if (p.ice) {
+  ctx.strokeStyle = p.color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(p.x-p.r*2, p.y);
+  ctx.lineTo(p.x+p.r*2, p.y);
+  ctx.moveTo(p.x, p.y-p.r*2);
+  ctx.lineTo(p.x, p.y+p.r*2);
+  ctx.stroke();
+ } else {
+  ctx.fillStyle = p.color;
+  ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+ }
+ ctx.restore();
 }
 function drawEnemy(e) {
-  ctx.fillStyle = e.hitFlash > 0 ? '#ffffff' : e.color;
-  ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill();
+ ctx.fillStyle = e.hitFlash > 0 ? '#ffffff' : e.color;
+ ctx.beginPath(); ctx.arc(e.x,e.y,e.r,0,Math.PI*2); ctx.fill();
 
-  if (e.frozen > 0) {
-    ctx.strokeStyle = 'rgba(142,225,255,.85)';
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(e.x,e.y,e.r+4,0,Math.PI*2); ctx.stroke();
-  }
+ if (e.frozen > 0) {
+  ctx.strokeStyle = 'rgba(142,225,255,.85)';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(e.x,e.y,e.r+4,0,Math.PI*2); ctx.stroke();
+ }
 
-  ctx.fillStyle = 'rgba(0,0,0,.38)';
-  ctx.fillRect(e.x-e.r, e.y-e.r-10, e.r*2, 5);
-  ctx.fillStyle = e.boss ? '#ffec87' : '#fff';
-  ctx.fillRect(e.x-e.r, e.y-e.r-10, e.r*2*Math.max(0,e.hp/e.maxHp), 5);
+ ctx.fillStyle = 'rgba(0,0,0,.38)';
+ ctx.fillRect(e.x-e.r, e.y-e.r-10, e.r*2, 5);
+ ctx.fillStyle = e.boss ? '#ffec87' : '#fff';
+ ctx.fillRect(e.x-e.r, e.y-e.r-10, e.r*2*Math.max(0,e.hp/e.maxHp), 5);
 
-  ctx.fillStyle = 'rgba(0,0,0,.28)';
-  ctx.beginPath();
-  ctx.arc(e.x-e.r*.35, e.y-e.r*.15, Math.max(2,e.r*.13),0,Math.PI*2);
-  ctx.arc(e.x+e.r*.35, e.y-e.r*.15, Math.max(2,e.r*.13),0,Math.PI*2);
-  ctx.fill();
+ ctx.fillStyle = 'rgba(0,0,0,.28)';
+ ctx.beginPath();
+ ctx.arc(e.x-e.r*.35, e.y-e.r*.15, Math.max(2,e.r*.13),0,Math.PI*2);
+ ctx.arc(e.x+e.r*.35, e.y-e.r*.15, Math.max(2,e.r*.13),0,Math.PI*2);
+ ctx.fill();
 
-  if (e.boss) {
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 12px Microsoft YaHei';
-    ctx.textAlign = 'center';
-    ctx.fillText('BOSS', e.x, e.y + e.r + 16);
-  }
-}
-function drawPlayer() {
-  ctx.save();
-  ctx.translate(player.x, player.y);
-  ctx.fillStyle = '#57b9ff';
-  ctx.beginPath(); ctx.arc(0,0,player.r,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#ffda69';
-  ctx.beginPath(); ctx.arc(0,-9,13,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#ff6c6c';
-  ctx.beginPath(); ctx.arc(-11,7,8,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#9dff91';
-  ctx.beginPath(); ctx.arc(11,8,8,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#ffffff';
+ if (e.boss) {
+  ctx.fillStyle = '#fff';
   ctx.font = 'bold 12px Microsoft YaHei';
   ctx.textAlign = 'center';
-  ctx.fillText('果篮', 0, 38);
-  ctx.restore();
+  ctx.fillText('BOSS', e.x, e.y + e.r + 16);
+ }
+}
+function drawPlayer() {
+ ctx.save();
+ ctx.translate(player.x, player.y);
+
+ if (g && g.skills) {
+  const aura = bulletVisual().glow;
+  const pulse = Math.sin(g.time/150) * 2;
+  if (g.skills.bulletCount >= 3 || g.skills.splash || g.skills.slow || g.combos.fanPierce) {
+   ctx.globalAlpha = .34;
+   ctx.strokeStyle = aura;
+   ctx.lineWidth = 3;
+   ctx.beginPath();
+   ctx.arc(0, 0, player.r + 8 + pulse, 0, Math.PI*2);
+   ctx.stroke();
+   ctx.globalAlpha = 1;
+  }
+  if (g.combos.fruitStorm) {
+   ctx.globalAlpha = .55;
+   ctx.strokeStyle = '#ffe071';
+   ctx.lineWidth = 2;
+   for (let i=0;i<3;i++) {
+    const a = g.time/350 + i*Math.PI*2/3;
+    ctx.beginPath();
+    ctx.arc(Math.cos(a)*28, Math.sin(a)*12, 5, 0, Math.PI*2);
+    ctx.stroke();
+   }
+   ctx.globalAlpha = 1;
+  }
+ }
+
+ ctx.fillStyle = '#57b9ff';
+ ctx.beginPath(); ctx.arc(0,0,player.r,0,Math.PI*2); ctx.fill();
+ ctx.fillStyle = '#ffda69';
+ ctx.beginPath(); ctx.arc(0,-9,13,0,Math.PI*2); ctx.fill();
+ ctx.fillStyle = '#ff6c6c';
+ ctx.beginPath(); ctx.arc(-11,7,8,0,Math.PI*2); ctx.fill();
+ ctx.fillStyle = '#9dff91';
+ ctx.beginPath(); ctx.arc(11,8,8,0,Math.PI*2); ctx.fill();
+ ctx.fillStyle = '#ffffff';
+ ctx.font = 'bold 12px Microsoft YaHei';
+ ctx.textAlign = 'center';
+ ctx.fillText('果篮', 0, 38);
+ ctx.restore();
 }
 function drawGoal() {
-  ctx.fillStyle = 'rgba(0,0,0,.28)';
-  ctx.fillRect(16, 118, W-32, 30);
-  ctx.fillStyle = '#dbe9ff';
-  ctx.font = '12px Microsoft YaHei';
-  ctx.textAlign = 'left';
-  const goal = currentStage ? (currentStage.boss ? (g.bossSpawned ? '目标：击败 Boss' : `目标：击败怪物召唤 Boss ${g.kills}/${Math.floor(currentStage.target*.55)}`) : `目标：击败 ${currentStage.target} 个怪物 ${g.kills}/${currentStage.target}`) : '';
-  ctx.fillText(goal, 28, 137);
-  if (g.combo > 0) {
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#ffec87';
-    ctx.font = 'bold 14px Microsoft YaHei';
-    ctx.fillText(`${g.combo} 连杀`, W-28, 137);
-  }
+ ctx.fillStyle = 'rgba(0,0,0,.28)';
+ ctx.fillRect(16, 118, W-32, 30);
+ ctx.fillStyle = '#dbe9ff';
+ ctx.font = '12px Microsoft YaHei';
+ ctx.textAlign = 'left';
+ let goal = '';
+ if (g.mode === 'endless') {
+  goal = `无尽目标：坚持更久 · 难度 ${difficultyLevel()} · ${Math.floor(g.time/1000)} 秒`;
+ } else if (g.tailActive) {
+  goal = `尾部清怪：继续战斗 ${Math.ceil(tailTimeLeft()/1000)} 秒`;
+ } else {
+  goal = currentStage ? (currentStage.boss ? (g.bossSpawned ? '目标：击败 Boss，随后进入尾部清场' : `目标：击败怪物召唤 Boss ${g.kills}/${Math.floor(currentStage.target*.55)}`) : `目标：击败 ${currentStage.target} 个怪物 ${g.kills}/${currentStage.target}`) : '';
+ }
+ ctx.fillText(goal, 28, 137);
+ if (g.combo > 0) {
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#ffec87';
+  ctx.font = 'bold 14px Microsoft YaHei';
+  ctx.fillText(`${g.combo} 连杀`, W-28, 137);
+ }
 }
 function drawText(t) {
-  ctx.globalAlpha = Math.max(0, t.life/42);
-  ctx.fillStyle = t.color;
-  ctx.font = `bold ${t.size}px Microsoft YaHei`;
-  ctx.textAlign = 'center';
-  ctx.fillText(t.text, t.x, t.y);
-  ctx.globalAlpha = 1;
+ ctx.globalAlpha = Math.max(0, t.life/42);
+ ctx.fillStyle = t.color;
+ ctx.font = `bold ${t.size}px Microsoft YaHei`;
+ ctx.textAlign = 'center';
+ ctx.fillText(t.text, t.x, t.y);
+ ctx.globalAlpha = 1;
 }
 function drawDanger() {
-  ctx.globalAlpha = Math.min(.35, dangerFlash/14*.35);
-  ctx.fillStyle = '#ff3333';
-  ctx.fillRect(0,0,W,H);
-  ctx.globalAlpha = 1;
+ ctx.globalAlpha = Math.min(.35, dangerFlash/14*.35);
+ ctx.fillStyle = '#ff3333';
+ ctx.fillRect(0,0,W,H);
+ ctx.globalAlpha = 1;
 }
 
 /* ===================== 控制 ===================== */
 function loop(t) {
-  if (!running || paused) return;
-  const dt = Math.min(34, t-lastTime);
-  lastTime = t;
-  update(dt);
-  draw();
-  requestAnimationFrame(loop);
+ if (!running || paused) return;
+ const dt = Math.min(34, t-lastTime);
+ lastTime = t;
+ update(dt);
+ draw();
+ requestAnimationFrame(loop);
 }
 function setPlayerX(clientX) {
-  if (!player) return;
-  const rect = canvas.getBoundingClientRect();
-  player.x = Math.max(28, Math.min(W-28, clientX - rect.left));
+ if (!player) return;
+ const rect = canvas.getBoundingClientRect();
+ player.x = Math.max(28, Math.min(W-28, clientX - rect.left));
 }
 canvas.addEventListener('mousedown', e => setPlayerX(e.clientX));
 canvas.addEventListener('mousemove', e => { if (e.buttons) setPlayerX(e.clientX); });
@@ -1231,37 +1521,37 @@ canvas.addEventListener('touchmove', e => { e.preventDefault(); setPlayerX(e.tou
 
 document.getElementById('claimReward').onclick = claimReward;
 document.getElementById('doubleReward').onclick = () => {
-  if (g.doubled) return;
-  g.doubled = true;
-  g.reward *= 2;
-  document.getElementById('resultReward').textContent = g.reward;
-  document.getElementById('doubleReward').style.display = 'none';
-  toast('已模拟广告翻倍');
+ if (g.doubled) return;
+ g.doubled = true;
+ g.reward *= 2;
+ document.getElementById('resultReward').textContent = g.reward;
+ document.getElementById('doubleReward').style.display = 'none';
+ toast('已模拟广告翻倍');
 };
 document.getElementById('reviveBtn').onclick = () => {
-  if (g.reviveUsed) return;
-  g.reviveUsed = true;
-  resultModal.classList.remove('active');
-  g.hp = Math.ceil(g.maxHp * .55);
-  enemies = [];
-  running = true; paused = false;
-  updateHud();
-  lastTime = performance.now();
-  toast('复活成功');
-  requestAnimationFrame(loop);
+ if (g.reviveUsed) return;
+ g.reviveUsed = true;
+ resultModal.classList.remove('active');
+ g.hp = Math.ceil(g.maxHp * .55);
+ enemies = [];
+ running = true; paused = false;
+ updateHud();
+ lastTime = performance.now();
+ toast('复活成功');
+ requestAnimationFrame(loop);
 };
 document.getElementById('pauseBtn').onclick = () => {
-  if (!running) return;
-  paused = true; pauseModal.classList.add('active');
+ if (!running) return;
+ paused = true; pauseModal.classList.add('active');
 };
 document.getElementById('resumeBtn').onclick = () => {
-  pauseModal.classList.remove('active');
-  paused = false; lastTime = performance.now(); requestAnimationFrame(loop);
+ pauseModal.classList.remove('active');
+ paused = false; lastTime = performance.now(); requestAnimationFrame(loop);
 };
 document.getElementById('quitBtn').onclick = () => {
-  pauseModal.classList.remove('active');
-  running=false; paused=false; battleUI.classList.remove('active');
-  showScreen('home');
+ pauseModal.classList.remove('active');
+ running=false; paused=false; battleUI.classList.remove('active');
+ showScreen('home');
 };
 
 renderHome();
